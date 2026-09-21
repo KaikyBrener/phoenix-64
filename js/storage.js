@@ -1,23 +1,173 @@
 /**
  * Gerenciador de Armazenamento
- * Gerencia a persistência local de histórico, favoritos e estatísticas
+ * Gerencia a persistência local de histórico, favoritos e estatísticas.
+ * - Histórico e favoritos: IndexedDB (dados grandes; Base64/preview)
+ * - Stats e tentativas:    localStorage (pequenos, leitura síncrona necessária)
  */
 
 class StorageManager {
     constructor() {
-        this.historico = this.carregarHistorico();
-        this.favoritos = this.carregarFavoritos();
+        this.historico = [];
+        this.favoritos = [];
         this.stats = this.carregarStats();
+        this._db = null;
+        this._pronto = this._abrirDB();
     }
 
-    // Gerenciamento de histórico
-    carregarHistorico() {
-        const data = localStorage.getItem('phoenix_historico');
-        return data ? JSON.parse(data) : [];
+    // ===== INDEXEDDB =====
+    _abrirDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open('phoenix_v5', 1);
+
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('historico')) {
+                    db.createObjectStore('historico', { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains('favoritos')) {
+                    db.createObjectStore('favoritos', { keyPath: 'id' });
+                }
+            };
+
+            req.onsuccess = async (e) => {
+                this._db = e.target.result;
+                await this._migrarLocalStorage();
+                await this._carregarTudoDoIDB();
+                resolve();
+            };
+
+            req.onerror = () => {
+                console.warn('[Storage] IndexedDB não disponível, usando localStorage como fallback.');
+                // Fallback: carrega do localStorage
+                this.historico = this._lsCarregar('phoenix_historico');
+                this.favoritos = this._lsCarregar('phoenix_favoritos');
+                resolve();
+            };
+        });
     }
+
+    /** Migra dados existentes do localStorage para o IndexedDB (executa apenas uma vez) */
+    async _migrarLocalStorage() {
+        if (!this._db) return;
+        const migrado = localStorage.getItem('phoenix_idb_migrado');
+        if (migrado) return;
+
+        const lsHistorico = this._lsCarregar('phoenix_historico');
+        const lsFavoritos = this._lsCarregar('phoenix_favoritos');
+
+        if (lsHistorico.length > 0) {
+            await this._idbPutLote('historico', lsHistorico);
+        }
+        if (lsFavoritos.length > 0) {
+            await this._idbPutLote('favoritos', lsFavoritos);
+        }
+
+        // Remove dados pesados do localStorage após migração
+        localStorage.removeItem('phoenix_historico');
+        localStorage.removeItem('phoenix_favoritos');
+        localStorage.setItem('phoenix_idb_migrado', '1');
+    }
+
+    async _carregarTudoDoIDB() {
+        this.historico = await this._idbGetAll('historico');
+        // Ordena por timestamp desc (mais recente primeiro)
+        this.historico.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        this.favoritos = await this._idbGetAll('favoritos');
+        this.favoritos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    }
+
+    // Helpers IDB
+    _idbGetAll(store) {
+        return new Promise((resolve) => {
+            if (!this._db) return resolve([]);
+            try {
+                const tx = this._db.transaction(store, 'readonly');
+                const req = tx.objectStore(store).getAll();
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = () => resolve([]);
+            } catch { resolve([]); }
+        });
+    }
+
+    _idbPut(store, item) {
+        return new Promise((resolve) => {
+            if (!this._db) return resolve();
+            try {
+                const tx = this._db.transaction(store, 'readwrite');
+                tx.objectStore(store).put(item);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => resolve();
+            } catch { resolve(); }
+        });
+    }
+
+    _idbPutLote(store, items) {
+        return new Promise((resolve) => {
+            if (!this._db || items.length === 0) return resolve();
+            try {
+                const tx = this._db.transaction(store, 'readwrite');
+                const os = tx.objectStore(store);
+                items.forEach(i => os.put(i));
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => resolve();
+            } catch { resolve(); }
+        });
+    }
+
+    _idbDelete(store, id) {
+        return new Promise((resolve) => {
+            if (!this._db) return resolve();
+            try {
+                const tx = this._db.transaction(store, 'readwrite');
+                tx.objectStore(store).delete(id);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => resolve();
+            } catch { resolve(); }
+        });
+    }
+
+    _idbClear(store) {
+        return new Promise((resolve) => {
+            if (!this._db) return resolve();
+            try {
+                const tx = this._db.transaction(store, 'readwrite');
+                tx.objectStore(store).clear();
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => resolve();
+            } catch { resolve(); }
+        });
+    }
+
+    // Fallback helpers para localStorage
+    _lsCarregar(chave) {
+        try {
+            const d = localStorage.getItem(chave);
+            return d ? JSON.parse(d) : [];
+        } catch { return []; }
+    }
+
+    _lsSalvar(chave, dados) {
+        try {
+            localStorage.setItem(chave, JSON.stringify(dados));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                console.warn('[Storage] localStorage cheio, ignorando persistência de fallback.');
+            }
+        }
+    }
+
+    // ===== HISTÓRICO =====
+    // Mantido síncrono em memória; persiste async no IDB
+    carregarHistorico() { return this.historico; }
 
     salvarHistorico() {
-        localStorage.setItem('phoenix_historico', JSON.stringify(this.historico));
+        if (this._db) {
+            // Não usa localStorage para histórico (dados grandes)
+            return;
+        }
+        // Fallback localStorage
+        this._lsSalvar('phoenix_historico', this.historico);
     }
 
     adicionarAoHistorico(item) {
@@ -36,37 +186,18 @@ class StorageManager {
 
         // Manter apenas 20 itens mais recentes (FIFO)
         if (this.historico.length > 20) {
-            this.historico = this.historico.slice(0, 20);
+            const removidos = this.historico.splice(20);
+            // Remove do IDB os excedentes
+            if (this._db) {
+                removidos.forEach(r => this._idbDelete('historico', r.id));
+            }
         }
 
-        try {
-            this.salvarHistorico();
-        } catch (e) {
-            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-                // Iterativamente remover os itens mais antigos até ter espaço
-                while (this.historico.length > 1) {
-                    this.historico.pop(); // Remove o último (mais antigo)
-                    try {
-                        this.salvarHistorico();
-                        break; // Conseguiu salvar!
-                    } catch (e2) {
-                        // Continua o loop se ainda estiver cheio
-                    }
-                }
-                
-                // Se só tem 1 item (o atual) e ainda dá erro, o próprio arquivo excede a cota
-                if (this.historico.length === 1) {
-                    try {
-                        this.salvarHistorico();
-                    } catch (e3) {
-                        this.historico = []; // Desiste de salvar no histórico para não quebrar a aplicação
-                        this.salvarHistorico();
-                        console.warn("Item muito grande para ser salvo no histórico.");
-                    }
-                }
-            } else {
-                throw e;
-            }
+        // Persiste async
+        if (this._db) {
+            this._idbPut('historico', novoItem);
+        } else {
+            this._lsSalvar('phoenix_historico', this.historico);
         }
 
         this.atualizarStats('conversoes');
@@ -79,22 +210,26 @@ class StorageManager {
 
     limparHistorico() {
         this.historico = [];
-        this.salvarHistorico();
+        if (this._db) {
+            this._idbClear('historico');
+        } else {
+            this._lsSalvar('phoenix_historico', []);
+        }
     }
 
     deletarDoHistorico(id) {
         this.historico = this.historico.filter(item => item.id !== id);
-        this.salvarHistorico();
+        if (this._db) {
+            this._idbDelete('historico', id);
+        } else {
+            this._lsSalvar('phoenix_historico', this.historico);
+        }
     }
 
-    // Gerenciamento de favoritos
-    carregarFavoritos() {
-        const data = localStorage.getItem('phoenix_favoritos');
-        return data ? JSON.parse(data) : [];
-    }
-
+    // ===== FAVORITOS =====
     salvarFavoritos() {
-        localStorage.setItem('phoenix_favoritos', JSON.stringify(this.favoritos));
+        if (this._db) return;
+        this._lsSalvar('phoenix_favoritos', this.favoritos);
     }
 
     adicionarAosFavoritos(item) {
@@ -116,33 +251,10 @@ class StorageManager {
 
         this.favoritos.unshift(novoFavorito);
 
-        try {
-            this.salvarFavoritos();
-        } catch (e) {
-            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-                // Se excedeu, remove o favorito mais antigo até caber
-                while (this.favoritos.length > 1) {
-                    this.favoritos.pop();
-                    try {
-                        this.salvarFavoritos();
-                        return { sucesso: false, mensagem: 'Espaço cheio. O favorito mais antigo foi removido para dar espaço.' };
-                    } catch (e2) {
-                        // Continua removendo
-                    }
-                }
-                
-                if (this.favoritos.length === 1) {
-                    try {
-                        this.salvarFavoritos();
-                    } catch (e3) {
-                        this.favoritos = [];
-                        this.salvarFavoritos();
-                        return { sucesso: false, mensagem: 'O arquivo é muito grande para os favoritos.' };
-                    }
-                }
-            } else {
-                throw e;
-            }
+        if (this._db) {
+            this._idbPut('favoritos', novoFavorito);
+        } else {
+            this._lsSalvar('phoenix_favoritos', this.favoritos);
         }
 
         return { sucesso: true, mensagem: 'Adicionado aos favoritos!' };
@@ -154,18 +266,28 @@ class StorageManager {
 
     limparFavoritos() {
         this.favoritos = [];
-        this.salvarFavoritos();
+        if (this._db) {
+            this._idbClear('favoritos');
+        } else {
+            this._lsSalvar('phoenix_favoritos', []);
+        }
     }
 
     deletarDosFavoritos(id) {
         this.favoritos = this.favoritos.filter(item => item.id !== id);
-        this.salvarFavoritos();
+        if (this._db) {
+            this._idbDelete('favoritos', id);
+        } else {
+            this._lsSalvar('phoenix_favoritos', this.favoritos);
+        }
     }
 
-    // Gerenciamento de estatísticas
+    // ===== ESTATÍSTICAS (localStorage — pequenas, leitura síncrona) =====
     carregarStats() {
-        const data = localStorage.getItem('phoenix_stats');
-        return data ? JSON.parse(data) : this._statsDefault();
+        try {
+            const data = localStorage.getItem('phoenix_stats');
+            return data ? JSON.parse(data) : this._statsDefault();
+        } catch { return this._statsDefault(); }
     }
 
     _statsDefault() {
@@ -179,7 +301,9 @@ class StorageManager {
     }
 
     salvarStats() {
-        localStorage.setItem('phoenix_stats', JSON.stringify(this.stats));
+        try {
+            localStorage.setItem('phoenix_stats', JSON.stringify(this.stats));
+        } catch { /* ignora se localStorage estiver cheio */ }
     }
 
     atualizarStats(tipo) {
@@ -203,14 +327,24 @@ class StorageManager {
     }
 
     obterStats() {
+        // Sincroniza totalFavoritos com o array em memória
+        this.stats.totalFavoritos = this.favoritos.length;
         return this.stats;
     }
 
     limparTudo() {
-        localStorage.clear();
+        localStorage.removeItem('phoenix_stats');
+        localStorage.removeItem('phoenix_tentativas');
         this.historico = [];
         this.favoritos = [];
         this.stats = this._statsDefault();
+        if (this._db) {
+            this._idbClear('historico');
+            this._idbClear('favoritos');
+        } else {
+            this._lsSalvar('phoenix_historico', []);
+            this._lsSalvar('phoenix_favoritos', []);
+        }
     }
 }
 

@@ -12,9 +12,16 @@ class PhoenixApp {
         this.init();
     }
 
-    init() {
+    async init() {
+        // Aguarda IndexedDB carregar histórico/favoritos antes de renderizar
+        await this.storage._pronto;
         this.setupEventListeners();
         this.atualizarDashboard();
+        
+        // Revelar cards de métrica com animação suave
+        setTimeout(() => {
+            document.querySelectorAll('.metric-card').forEach(card => card.classList.add('show'));
+        }, 50);
     }
 
     // ===== EVENT LISTENERS =====
@@ -34,6 +41,12 @@ class PhoenixApp {
         const imageInput = document.getElementById('imageInput');
 
         uploadArea.addEventListener('click', () => imageInput.click());
+        uploadArea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                imageInput.click();
+            }
+        });
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.classList.add('dragover');
@@ -120,6 +133,10 @@ class PhoenixApp {
             return;
         }
 
+        // Registrar tentativa válida
+        const tentativas = parseInt(localStorage.getItem('phoenix_tentativas') || '0') + 1;
+        localStorage.setItem('phoenix_tentativas', tentativas);
+
         try {
             // Mostrar loading
             AlertHelper.loading('Processando...', 'Convertendo imagem para Base64');
@@ -154,6 +171,9 @@ class PhoenixApp {
         } catch (erro) {
             AlertHelper.error('Erro ao processar', erro.message);
         }
+
+        // Atualizar taxa de sucesso no dashboard
+        this.atualizarDashboard();
     }
 
     // ===== EXIBIÇÃO DE RESULTADOS =====
@@ -164,9 +184,12 @@ class PhoenixApp {
 
         // Preview
         const previewContainer = document.getElementById('previewContainer');
-        previewContainer.innerHTML = `
-            <img src="${preview.url}" style="max-width: 100%; max-height: 300px; border-radius: 0.5rem;" alt="Preview">
-        `;
+        previewContainer.innerHTML = '';
+        const imgPreview = document.createElement('img');
+        imgPreview.style.cssText = 'max-width: 100%; max-height: 300px; border-radius: 0.5rem;';
+        imgPreview.alt = 'Preview';
+        imgPreview.src = (preview.url && (preview.url.startsWith('data:image/png;base64,') || preview.url.startsWith('data:image/jpeg;base64,') || preview.url.startsWith('data:image/webp;base64,'))) ? preview.url : '';
+        previewContainer.appendChild(imgPreview);
 
         // Informações
         document.getElementById('imageName').textContent = metadados.nome;
@@ -308,6 +331,10 @@ class PhoenixApp {
         if (advancedStats) advancedStats.style.display = 'none';
     }
 
+    limparConversor() {
+        this.limparConversorSilencioso();
+    }
+
     limparHistorico() {
         AlertHelper.confirm('Limpar histórico?', 'Essa ação não pode ser desfeita', {
             confirmButtonText: 'Sim, limpar',
@@ -344,11 +371,6 @@ class PhoenixApp {
 
     // ===== ABAS =====
     mudarAba(abaId) {
-        // Redirecionar imagem-base64 para conversor
-        if (abaId === 'imagem-base64') {
-            abaId = 'conversor';
-        }
-
         // Ocultar todas
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.style.display = 'none';
@@ -386,11 +408,19 @@ class PhoenixApp {
         const stats = this.storage.obterStats();
         const historico = this.storage.obterHistorico();
 
-        document.getElementById('conversoes-hoje').textContent = stats.conversioesHoje;
+        document.getElementById('conversoes-hoje').textContent = stats.conversoesHoje;
         document.getElementById('imagens-processadas').textContent = stats.totalConversoes;
         document.getElementById('favoritos-count').textContent = stats.totalFavoritos;
 
-        // Histórico recente
+        // Taxa de sucesso: conversões concluídas / tentativas válidas × 100
+        const tentativas = parseInt(localStorage.getItem('phoenix_tentativas') || '0');
+        const taxaEl = document.getElementById('taxa-sucesso');
+        if (tentativas > 0) {
+            const taxa = Math.round((stats.totalConversoes / tentativas) * 100);
+            taxaEl.textContent = taxa + '%';
+        } else {
+            taxaEl.textContent = '-';
+        }
         const historicoRecente = document.getElementById('historico-recente');
         if (historico.length === 0) {
             historicoRecente.innerHTML = '<p class="text-white-50">Nenhuma conversão realizada ainda.</p>';
@@ -411,7 +441,7 @@ class PhoenixApp {
                     <small class="text-danger item-tamanho"></small>
                 `;
                 
-                container.querySelector('.item-img').src = item.preview || '';
+                container.querySelector('.item-img').src = (item.preview && (item.preview.startsWith('data:image/png;base64,') || item.preview.startsWith('data:image/jpeg;base64,') || item.preview.startsWith('data:image/webp;base64,'))) ? item.preview : '';
                 container.querySelector('.item-nome').textContent = item.nome;
                 container.querySelector('.item-data').textContent = item.data;
                 container.querySelector('.item-tamanho').textContent = item.tamanho;
@@ -455,7 +485,7 @@ class PhoenixApp {
                 </div>
             `;
             
-            container.querySelector('.item-img').src = item.preview || '';
+            container.querySelector('.item-img').src = (item.preview && (item.preview.startsWith('data:image/png;base64,') || item.preview.startsWith('data:image/jpeg;base64,') || item.preview.startsWith('data:image/webp;base64,'))) ? item.preview : '';
             container.querySelector('.item-nome').textContent = item.nome;
             container.querySelector('.item-detalhes').textContent = `${item.tipo} • ${item.tamanho} • ${item.data}`;
             container.querySelector('.btn-copy').onclick = () => this.copiarDoHistorico(item.id);
@@ -499,7 +529,7 @@ class PhoenixApp {
                 </div>
             `;
             
-            container.querySelector('.item-img').src = item.preview || '';
+            container.querySelector('.item-img').src = (item.preview && (item.preview.startsWith('data:image/png;base64,') || item.preview.startsWith('data:image/jpeg;base64,') || item.preview.startsWith('data:image/webp;base64,'))) ? item.preview : '';
             container.querySelector('.item-nome').textContent = item.nome;
             container.querySelector('.item-detalhes').textContent = `${item.tipo} • ${item.tamanho} • ${item.data}`;
             container.querySelector('.btn-copy').onclick = () => this.copiarDoFavorito(item.id);
@@ -578,22 +608,57 @@ class PhoenixApp {
 
     // ===== BASE64 PARA IMAGEM =====
     converterBase64ParaImagem() {
-        const base64Input = document.getElementById('base64Input').value.trim();
+        let base64Input = document.getElementById('base64Input').value.trim();
 
         if (!base64Input) {
             AlertHelper.warning('Campo vazio', 'Cole o código Base64 para converter');
             return;
         }
 
+        // Limpar espaços e quebras de linha
+        base64Input = base64Input.replace(/\s+/g, '');
+
         try {
-            // Remove data URL prefix se existir
+            // Detectar MIME e extrair Base64 puro
+            const MIMES_VALIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+            let mime = 'image/png'; // fallback para Base64 puro
             let base64Clean = base64Input;
-            if (base64Input.includes(',')) {
-                base64Clean = base64Input.split(',')[1];
+
+            if (base64Input.startsWith('data:')) {
+                const sepIdx = base64Input.indexOf(',');
+                if (sepIdx === -1) {
+                    AlertHelper.error('Base64 Inválido', 'O formato do Data URL está incorreto.');
+                    return;
+                }
+                const header = base64Input.substring(0, sepIdx); // ex: data:image/jpeg;base64
+                const mimeMatch = header.match(/data:([^;]+);base64/);
+                if (mimeMatch && MIMES_VALIDOS.includes(mimeMatch[1].toLowerCase())) {
+                    mime = mimeMatch[1].toLowerCase();
+                } else if (mimeMatch) {
+                    AlertHelper.error('Tipo não suportado', 'Apenas JPEG, PNG ou WEBP são suportados.');
+                    return;
+                } else {
+                    AlertHelper.error('Base64 Inválido', 'O cabeçalho do Data URL é inválido.');
+                    return;
+                }
+                base64Clean = base64Input.substring(sepIdx + 1);
+            }
+
+            // Validar formato Base64 (apenas caracteres válidos)
+            if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Clean)) {
+                AlertHelper.error('Base64 Inválido', 'O código contém caracteres inválidos.');
+                return;
+            }
+
+            // Respeitar limite (cerca de 3MB originais -> ~4MB Base64)
+            if (base64Clean.length > 4.1 * 1024 * 1024) {
+                AlertHelper.error('Arquivo muito grande', 'O tamanho máximo suportado é de cerca de 3MB.');
+                return;
             }
 
             // Criar imagem
             const img = new Image();
+            img.dataset.mime = mime;
             img.onload = () => {
                 const container = document.getElementById('base64PreviewContainer');
                 container.innerHTML = '';
@@ -609,7 +674,7 @@ class PhoenixApp {
                 AlertHelper.error('Erro na conversão', 'Verifique se o código Base64 está correto (inválido ou corrompido)');
             };
 
-            img.src = 'data:image/png;base64,' + base64Clean;
+            img.src = `data:${mime};base64,` + base64Clean;
         } catch (error) {
             AlertHelper.error('Erro na conversão', 'Verifique se o código Base64 está correto');
         }
@@ -624,9 +689,14 @@ class PhoenixApp {
             return;
         }
 
+        // Determinar extensão a partir do MIME armazenado no elemento
+        const mime = img.dataset.mime || 'image/png';
+        const extMap = { 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/png': 'png' };
+        const ext = extMap[mime] || 'png';
+
         const link = document.createElement('a');
         link.href = img.src;
-        link.download = 'imagem_' + new Date().getTime() + '.png';
+        link.download = 'imagem_' + new Date().getTime() + '.' + ext;
         link.click();
 
         AlertHelper.toast('Download iniciado!', 'success');
@@ -648,7 +718,9 @@ class PhoenixApp {
         }
 
         try {
-            const encoded = btoa(unescape(encodeURIComponent(textInput)));
+            const bytes = new TextEncoder().encode(textInput);
+            const binary = Array.from(bytes).map(b => String.fromCharCode(b)).join('');
+            const encoded = btoa(binary);
             document.getElementById('textBase64Output').value = encoded;
 
             AlertHelper.toast('Codificado!', 'success', {
@@ -668,7 +740,12 @@ class PhoenixApp {
         }
 
         try {
-            const decoded = decodeURIComponent(escape(atob(textBase64)));
+            const binary = atob(textBase64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            const decoded = new TextDecoder().decode(bytes);
             document.getElementById('textInput').value = decoded;
 
             AlertHelper.toast('Decodificado!', 'success', {

@@ -1,6 +1,4 @@
-# wrangler files
-.wrangler
-.dev.vars*
-!.dev.vars.example
-.env*
-!.env.example
+fix.js
+generate_sri.js
+test.png
+tests/

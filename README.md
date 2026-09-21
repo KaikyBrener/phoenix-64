@@ -1,4 +1,4 @@
-# Phoenix
+# PHOENIX V5
 
 Conversor de imagens para Base64 com histórico local.
 
@@ -13,10 +13,11 @@ O histórico salva automaticamente em localStorage.
 
 ## O que faz
 
-- Converter imagem → Base64
-- Converter Base64 → Imagem
+- Converter imagem → Base64 (modo Padrão e Biometria Facial)
+- Converter Base64 → Imagem (detecta MIME: JPEG, PNG, WEBP)
 - Codificar/decodificar texto em Base64
-- Guardar histórico (últimas 100 conversões)
+- Comprimir imagem para até 200 KB (aba "Imagem → 200 KB", 100% local, via Canvas)
+- Guardar histórico (últimas 20 conversões)
 - Gerenciar favoritos
 
 ## Estrutura
@@ -25,6 +26,7 @@ O histórico salva automaticamente em localStorage.
 js/
 ├── storage.js     - Salva/carrega do localStorage
 ├── conversor.js   - Valida e converte arquivos
+├── compressor.js  - Aba "Imagem → 200 KB" (compressão via Canvas)
 └── main.js        - Gerencia UI e eventos
 
 index.html         - Página principal
@@ -48,7 +50,7 @@ Depois abrir `http://localhost:8000`
 ## Limitações
 
 - localStorage tem limite (~5-10 MB)
-- Arquivos acima de 10 MB são rejeitados
+- Arquivos acima de 3 MB são rejeitados pelo conversor
 - localStorage pode não funcionar em navegação privada (alguns navegadores)
 
 ## Browsers

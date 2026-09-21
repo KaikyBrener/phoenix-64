@@ -292,6 +292,7 @@ body.phoenix-app::before {
 
 .metric-card .card-body {
     min-height: 100%;
+    visibility: visible;
 }
 
 /* Upload Area */
