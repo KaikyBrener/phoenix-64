@@ -1,6 +1,8 @@
 # PHOENIX V5
 
-Conversor de imagens para Base64 com histórico local.
+Conversor de imagens para Base64, com compressão para até 200 KB e histórico local. Roda inteiro no navegador: HTML, CSS e JavaScript puro, sem build e sem dependências.
+
+**Privacidade:** nenhuma imagem ou texto é enviado a um servidor. O processamento e o histórico (`localStorage`) ficam só no seu navegador.
 
 ## Como usar
 
@@ -19,6 +21,10 @@ O histórico salva automaticamente em localStorage.
 - Comprimir imagem para até 200 KB (aba "Imagem → 200 KB", 100% local, via Canvas)
 - Guardar histórico (últimas 20 conversões)
 - Gerenciar favoritos
+
+## Tecnologias
+
+HTML, CSS (tema escuro), JavaScript sem frameworks, Canvas API para a compressão e `localStorage` para o histórico. O deploy usa Cloudflare (`wrangler.jsonc`), com cabeçalhos de segurança e CSP definidos em `_headers`.
 
 ## Estrutura
 
