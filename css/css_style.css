@@ -876,3 +876,41 @@ textarea.form-control {
 .stat-box.highlight span {
     color: #2fbf6f;
 }
+
+/* Botão flutuante do GitHub */
+.github-fab {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(20, 20, 20, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    z-index: 1050;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+}
+
+.github-fab:hover,
+.github-fab:focus-visible {
+    color: #fff;
+    transform: translateY(-3px);
+    border-color: rgba(255, 107, 26, 0.5);
+    box-shadow: 0 8px 24px rgba(255, 107, 26, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .github-fab { transition: none; }
+    .github-fab:hover, .github-fab:focus-visible { transform: none; }
+}
+
+/* Evita que o botão flutuante cubra o fim do conteúdo */
+.app-main {
+    padding-bottom: 5.5rem;
+}
