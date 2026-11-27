@@ -5,6 +5,35 @@ const CONFIG = {
     autoCopy: true
 };
 
+// Copia texto sem depender da permissão "clipboard" do navegador.
+// Com ativação do usuário usa execCommand (não pede permissão); senão tenta a API assíncrona.
+async function copiarTexto(texto) {
+    const copiarPorSelecao = () => {
+        const area = document.createElement('textarea');
+        area.value = texto;
+        area.setAttribute('readonly', '');
+        area.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0';
+        document.body.appendChild(area);
+        area.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+        area.remove();
+        return ok;
+    };
+
+    const ativo = navigator.userActivation && navigator.userActivation.isActive;
+    if (ativo && copiarPorSelecao()) return true;
+
+    if (navigator.clipboard && window.isSecureContext && document.hasFocus()) {
+        try {
+            await navigator.clipboard.writeText(texto);
+            return true;
+        } catch (_) { /* cai para a seleção */ }
+    }
+    return copiarPorSelecao();
+}
+
+
 class PhoenixApp {
     constructor() {
         this.converter = converter;
@@ -253,7 +282,19 @@ class PhoenixApp {
     // ===== AÇÕES =====
     copiarBase64(isAuto = false) {
         const base64Output = document.getElementById('base64Output');
-        navigator.clipboard.writeText(base64Output.value).then(() => {
+        copiarTexto(base64Output.value).then((ok) => {
+            if (!ok) {
+                if (isAuto) {
+                    AlertHelper.toast('Cópia automática indisponível', 'info', {
+                        text: 'Use o botão Copiar Manual.'
+                    });
+                } else {
+                    AlertHelper.toast('Erro', 'error', {
+                        text: 'Falha ao copiar'
+                    });
+                }
+                return;
+            }
             if (isAuto) {
                 const badge = document.getElementById('autoCopyBadge');
                 if (badge) badge.style.display = 'inline-block';
@@ -265,10 +306,6 @@ class PhoenixApp {
                     text: 'Base64 copiado para a área de transferência'
                 });
             }
-        }).catch(() => {
-            AlertHelper.toast('Erro', 'error', {
-                text: 'Falha ao copiar'
-            });
         });
     }
 
@@ -544,14 +581,16 @@ class PhoenixApp {
         const historico = this.storage.obterHistorico();
         const item = historico.find(h => h.id == id);
         if (item) {
-            navigator.clipboard.writeText(item.base64).then(() => {
-                AlertHelper.toast('Copiado!', 'success', {
-                    text: 'Base64 copiado para a área de transferência'
-                });
-            }).catch(() => {
-                AlertHelper.toast('Erro', 'error', {
-                    text: 'Falha ao copiar'
-                });
+            copiarTexto(item.base64).then((ok) => {
+                if (ok) {
+                    AlertHelper.toast('Copiado!', 'success', {
+                        text: 'Base64 copiado para a área de transferência'
+                    });
+                } else {
+                    AlertHelper.toast('Erro', 'error', {
+                        text: 'Falha ao copiar'
+                    });
+                }
             });
         }
     }
@@ -577,14 +616,16 @@ class PhoenixApp {
         const favoritos = this.storage.obterFavoritos();
         const item = favoritos.find(f => f.id == id);
         if (item) {
-            navigator.clipboard.writeText(item.base64).then(() => {
-                AlertHelper.toast('Copiado!', 'success', {
-                    text: 'Base64 copiado para a área de transferência'
-                });
-            }).catch(() => {
-                AlertHelper.toast('Erro', 'error', {
-                    text: 'Falha ao copiar'
-                });
+            copiarTexto(item.base64).then((ok) => {
+                if (ok) {
+                    AlertHelper.toast('Copiado!', 'success', {
+                        text: 'Base64 copiado para a área de transferência'
+                    });
+                } else {
+                    AlertHelper.toast('Erro', 'error', {
+                        text: 'Falha ao copiar'
+                    });
+                }
             });
         }
     }
@@ -764,10 +805,16 @@ class PhoenixApp {
             return;
         }
 
-        navigator.clipboard.writeText(textBase64).then(() => {
-            AlertHelper.toast('Copiado!', 'success', {
-                text: 'Texto Base64 copiado para área de transferência'
-            });
+        copiarTexto(textBase64).then((ok) => {
+            if (ok) {
+                AlertHelper.toast('Copiado!', 'success', {
+                    text: 'Texto Base64 copiado para área de transferência'
+                });
+            } else {
+                AlertHelper.toast('Erro', 'error', {
+                    text: 'Falha ao copiar'
+                });
+            }
         });
     }
 
