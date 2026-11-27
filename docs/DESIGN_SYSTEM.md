@@ -1,235 +1,194 @@
 # Design System — PHOENIX V5
 
-Referência visual da proposta. A implementação de referência fica em [`prototipo/index.html`](../prototipo/index.html); os valores abaixo são os mesmos do bloco `:root` desse arquivo.
+Referência visual da proposta, **revisão 2**. A implementação de referência fica em [`prototipo/index.html`](../prototipo/index.html); os valores abaixo são os do bloco `:root` desse arquivo.
 
 ## Princípios
 
-1. **Bancada, não painel.** Toda ferramenta é entrada → saída. A interface mostra os dois lados e o que aconteceu entre eles.
-2. **A brasa marca o que fazer.** O laranja da marca aparece só em ação primária, item selecionado e progresso. Ele não decora nada.
-3. **O conteúdo é o protagonista.** Imagens e códigos ocupam as maiores áreas. A interface ao redor fica calma.
-4. **Estado sempre visível.** Processando, pronto, erro e vazio têm texto, ícone e lugar fixo.
+1. **Rápido antes de bonito.** Nada que atrase abrir ou responder: sem fontes externas, sem espera artificial, sem animação automática.
+2. **O resultado fica à vista.** A ação principal e o resultado cabem na tela sem rolar, em notebook e celular.
+3. **Componentes iguais, arranjos diferentes.** Botões, campos e status são sempre os mesmos. A disposição de cada ferramenta segue o que se confere nela.
+4. **A brasa marca o que fazer.** Laranja só em ação primária e item selecionado.
+5. **Cada elemento precisa ajudar a usar.** Se não ajuda a escolher, converter, conferir ou copiar, sai.
 
-## 1. Paleta de cores
+## 1. Cores
 
-O tema é escuro, como no app atual. O fundo deixa o preto puro (`#050505`) e passa a um carvão com leve tom quente, coerente com a brasa.
+Tema escuro, como no app atual. O fundo deixa o preto puro e passa a um carvão quente.
 
 | Token | Hex | Uso |
 |---|---|---|
-| `--bg` | `#12100E` | Fundo da página |
-| `--surface` | `#1A1714` | Painéis, barra lateral, régua |
-| `--raised` | `#24201C` | Botão secundário, item em foco na navegação |
-| `--sunken` | `#0D0C0A` | Campos de código, área de upload |
-| `--line` | `#352F29` | Divisórias e bordas de painéis (decorativas) |
-| `--line-2` | `#4A423A` | Borda de diálogo e toast |
-| `--field` | `#746A60` | Borda de controles interativos (3,4:1 sobre `--surface`) |
+| `--bg` | `#12100E` | Fundo |
+| `--surface` | `#1A1714` | Painéis, barra lateral |
+| `--raised` | `#24201C` | Botão secundário, hover |
+| `--sunken` | `#0D0C0A` | Campos e área de upload |
+| `--line` | `#352F29` | Divisórias (decorativas) |
+| `--field` | `#746A60` | Borda de controles (3,4:1 sobre `--surface`) |
 | `--ink` | `#F3EEE7` | Texto principal |
-| `--ink-2` | `#B3A99D` | Texto secundário, rótulos, metadados |
-| `--ink-3` | `#8F857A` | Placeholder e ícones desabilitados |
-| `--ember` | `#FF6B1A` | Ação primária, seleção, barra de saída na régua (cor atual da marca) |
+| `--ink-2` | `#B3A99D` | Texto secundário |
+| `--ink-3` | `#8F857A` | Placeholder |
+| `--ember` | `#FF6B1A` | Ação primária, seleção, barra de saída (cor atual da marca) |
 | `--ember-hover` | `#FF8338` | Hover da ação primária |
-| `--ember-ink` | `#FF9A5C` | Brasa usada como texto ou link sobre fundo escuro |
+| `--ember-ink` | `#FF9A5C` | Brasa como texto ou link |
 | `--on-ember` | `#1C0D03` | Texto sobre a brasa |
-| `--ember-tint` | `rgba(255,107,26,.12)` | Fundo de item ativo, área de upload com arquivo por cima |
-| `--ok` | `#5CC98A` | Sucesso; redução de tamanho na régua |
+| `--ember-tint` | `rgba(255,107,26,.12)` | Item ativo, arquivo sobre a área de upload |
+| `--ok` | `#5CC98A` | Sucesso, "Copiado", redução de tamanho |
 | `--err` | `#F2617A` | Erro e ação destrutiva |
 | `--focus` | `#FFB089` | Anel de foco |
 
-**Contraste (WCAG 2.x), calculado:**
+**Contraste calculado (WCAG 2.x):** `--ink`/`--bg` 16,4:1 · `--ink-2`/`--surface` 7,7:1 · `--ember-ink`/`--surface` 8,5:1 · `--on-ember`/`--ember` 6,6:1 · `--ok`/`--surface` 8,7:1 · `--err`/`--surface` 5,8:1 · `--field`/`--surface` 3,4:1.
 
-| Par | Razão |
-|---|---|
-| `--ink` sobre `--bg` | 16,4:1 |
-| `--ink-2` sobre `--bg` / `--surface` / `--raised` | 8,2 / 7,7 / 7,0:1 |
-| `--ember-ink` sobre `--surface` | 8,5:1 |
-| `--on-ember` sobre `--ember` | 6,6:1 |
-| `--ok` sobre `--surface` | 8,7:1 |
-| `--err` sobre `--surface` | 5,8:1 |
-| `--focus` sobre `--bg` | 10,7:1 |
-| `--field` sobre `--surface` / `--sunken` | 3,4 / 3,7:1 |
-
-**Regras**
-- Brasa nunca indica erro, e vermelho nunca indica ação principal. Isso substitui o uso atual de `btn-danger` e `text-danger` como cor de marca.
-- Status nunca depende só da cor: sucesso e erro sempre levam ícone e texto.
-- Sem gradientes decorativos, grade de fundo ou brilho (`--shadow-glow`). O único gradiente é o padrão xadrez do visualizador, que mostra transparência.
+**Regras:** brasa nunca indica erro e vermelho nunca indica ação principal. Status sempre com ícone e texto. Sem gradientes, brilhos, grade de fundo ou desfoque. O único padrão é o xadrez atrás das imagens, que mostra transparência.
 
 ### Migração dos tokens atuais
 
-| Atual (`css/css_style.css`) | Proposto |
+| Atual | Proposto |
 |---|---|
 | `--primary-color: #ff6b1a` | `--ember` (mesmo valor) |
 | `--bg-main: #050505` | `--bg: #12100E` |
-| `--bg-sidebar: #0d0d0d` | `--surface: #1A1714` |
-| `--bg-surface: rgba(20,20,20,.75)` | `--surface` opaco |
-| `--border-color: rgba(255,255,255,.08)` | `--line` |
+| `--bg-sidebar`, `--bg-surface` translúcido | `--surface` opaco |
 | `--text-secondary: #9ca3af` | `--ink-2: #B3A99D` |
-| `--primary-glow`, `--shadow-glow`, `--shadow-lg` | Removidos |
+| `--primary-glow`, `--shadow-glow`, `--shadow-lg`, gradientes do `body` | Removidos |
 | Bootstrap `danger` como marca | `--ember` para marca, `--err` para erro |
 
 ## 2. Tipografia
 
-| Papel | Família | Por quê |
-|---|---|---|
-| Interface | IBM Plex Sans 400/500/600 | Desenho técnico e neutro, ótimo em tamanhos pequenos e com números claros. Tira o app do Inter genérico. |
-| Conteúdo Base64 | IBM Plex Mono 400 | Mesma família, larguras fixas para ler e conferir códigos longos. Usada só no conteúdo, nunca em rótulos. |
+**Fontes do sistema, sem download.** Inter (7 pesos) e IBM Plex (proposta da revisão 1) foram descartadas: qualquer fonte externa custa uma conexão a outro domínio e arquivos antes de o texto aparecer na forma final.
 
-Fontes via Google Fonts, permitidas pela CSP atual (`fonts.googleapis.com`, `fonts.gstatic.com`), com `system-ui` e `ui-monospace` como alternativa.
+| Papel | Pilha |
+|---|---|
+| Interface | `system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif` |
+| Código Base64 | `ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace` |
 
-**Escala**
-
-| Nível | Tamanho / altura de linha | Peso | Uso |
+| Nível | Tamanho | Peso | Uso |
 |---|---|---|---|
-| Título de tela | `clamp(28px, 3.2vw, 36px)` / 1,1, tracking −0,02em | 600 | `h1` de cada tela |
-| Seção | 18 px / 1,3 | 600 | "Ferramentas", "Atividade" |
-| Título de painel | 16 px / 1,3 | 600 | "Imagem", "Base64" |
-| Corpo | 16 px / 1,5 | 400 | Texto e botões (botões 15 px / 500) |
-| Meta | 14 px / 1,4 | 400 | Metadados, status, ajuda |
-| Mínimo | 13 px | 400 | Notas e etiquetas. Nada menor |
-| Código | 13,5 px / 1,6 mono | 400 | Base64 |
-| Número de destaque | 28 px, tracking −0,02em | 600 | Estatísticas |
+| Título da tela | `clamp(22px, 2.2vw, 26px)` / 1,2 | 600 | Um por tela, curto |
+| Título de painel | 15 px | 600 | "Base64", "Código", "Imagem" |
+| Corpo e botões | 16 px / 15 px | 400 / 500 | — |
+| Meta e status | 13 a 14 px | 400 | Dimensões, tamanhos, mensagens |
+| Código | 13 px / 1,55 mono | 400 | Base64 |
 
-Rótulos sempre em frase normal, sem caixa alta e sem espaçamento largo. Números em colunas e réguas usam `font-variant-numeric: tabular-nums`. Medidas e unidades não quebram linha ("140,3 KB", "640 × 480").
+Mínimo de 13 px. Rótulos em frase normal. Números com `tabular-nums`; medidas não quebram linha. O título é menor que na revisão 1 (era até 36 px) para devolver altura ao resultado.
 
-## 3. Hierarquia visual
+## 3. Espaçamento e alturas
 
-1. Título da tela e descrição de uma linha que diz o que a ferramenta faz.
-2. Bancada: os dois painéis com o mesmo peso visual. O conteúdo (imagem ou código) ocupa a maior área.
-3. Ação primária em brasa, uma por painel de saída.
-4. Régua de tamanho, ficha de dados e status.
-5. Navegação, em tom secundário até ser selecionada.
+- Escala: 4 · 6 · 8 · 10 · 12 · 14 · 16 · 24 px.
+- Painel: 14 px de respiro e 10 px entre itens. Entre painéis, 14 px. Entre título e ferramenta, 16 px (12 px no celular).
+- Raios: 6 px em controles e 10 px em painéis.
+- **Alturas limitadas pela tela, nunca fixas grandes.** Os painéis não esticam para igualar a coluna vizinha (`align-items: start`).
 
-## 4. Espaçamento e grade
+| Elemento | Notebook | Celular (≤ 820 px) |
+|---|---|---|
+| Campo de código (Imagem → Base64, Base64 → Imagem) | `clamp(150px, 34vh, 340px)` | `clamp(110px, 20vh, 200px)` |
+| Campo de código (Biometria facial) | `clamp(110px, 20vh, 200px)` | 72 px |
+| Campos de texto (Texto ↔ Base64) | `clamp(140px, 30vh, 320px)` | `clamp(110px, 20vh, 200px)` |
+| Área de upload vazia | mín. 150 px | mín. 120 px |
+| Foto ajustada (Biometria facial) | `clamp(170px, 32vh, 300px)` | `clamp(130px, 22vh, 200px)` |
+| Antes e depois (200 KB) | `clamp(130px, 30vh, 280px)` cada | idem, lado a lado |
 
-- Escala: 4 · 8 · 12 · 16 · 20 · 24 · 32 · 48 · 64 px.
-- Painel: cabeçalho com 14 × 16 px; corpo com 16 px e intervalo de 14 px.
-- Bancada: 16 px entre painéis. Entre título e bancada, 24 px (18 px no celular).
-- Conteúdo com até 1240 px de largura e margem lateral `clamp(16px, 4vw, 48px)`. Barra lateral de 248 px.
-- Raios: 6 px em controles, 10 px em áreas internas, 14 px em painéis. Um elemento interno nunca tem raio maior que o do pai.
+Meta verificada: o botão Copiar (ou Baixar) visível sem rolar em 1366 × 700, 1024 × 640, 390 × 740 e 360 × 640.
 
-## 5. Botões
+## 4. Componentes
+
+### Botões
 
 | Variante | Aparência | Uso |
 |---|---|---|
-| Primário | Fundo `--ember`, texto `--on-ember` | Uma ação principal por contexto: Copiar, Escolher imagem, Mostrar imagem, Baixar imagem, Codificar |
-| Secundário | Fundo `--raised`, borda `--field` | Ações de apoio: Baixar .txt, Favoritar, Trocar imagem, Decodificar |
-| Discreto | Sem fundo nem borda, texto `--ink-2` | Limpar, ações por item em listas |
-| Destrutivo | Borda `--field`, texto `--err`; no hover, fundo `--err-tint` | Limpar histórico, Limpar favoritos (sempre com confirmação) |
-| Link | Texto `--ember-ink` sublinhado | Alternativas: "Usar imagem de exemplo", "Ver histórico" |
+| Primário | Fundo `--ember`, texto `--on-ember` | Uma ação principal por contexto: Copiar, Escolher imagem, Baixar imagem, Codificar |
+| Primário confirmado | Fundo `--ok`, ícone de check, rótulo "Copiado" por 2,5 s | Depois de copiar (manual ou automático) |
+| Secundário | Fundo `--raised`, borda `--field` | .txt, Decodificar, Outra imagem |
+| Discreto | Sem fundo nem borda | Limpar, Trocar, ações por item |
+| Quadrado | 40 × 40, só ícone, com `aria-label` e `title` | Favoritar, Copiar/Remover em listas |
+| Destrutivo | Texto `--err`; no hover, fundo `--err-tint` | Limpar histórico ou favoritos, sempre com confirmação |
 
-- Altura mínima de 44 px; botão só com ícone tem 44 × 44 px (40 × 40 em listas no celular).
-- Ícone à esquerda do texto, 20 px.
-- **Carregando:** `aria-busy="true"`, spinner no lugar do ícone, rótulo mantido, botão desabilitado só enquanto processa.
-- **Desabilitado:** opacidade de 45% e cursor `not-allowed`. Só quando não há o que fazer, por exemplo Copiar sem código.
-- **Nomes padronizados** (a mesma ação tem o mesmo nome em toda parte): Copiar · Baixar .txt · Baixar imagem · Favoritar / Nos favoritos · Limpar · Trocar imagem · Remover.
+Altura de 40 px; a barra inferior do celular tem alvos de 52 px. Nomes iguais em toda parte: Copiar → Copiado · .txt · Baixar imagem · Favoritar · Limpar · Trocar · Remover.
 
-## 6. Campos
+### Chave "Copiar ao converter"
 
-- **Campo de código:** fundo `--sunken`, borda `--field`, Plex Mono 13,5 px, quebra em qualquer caractere, redimensionável na vertical, mínimo de 260 px (200 px no celular). `spellcheck="false"` e `translate="no"`.
-- **Rótulo:** todo campo tem `<label>`. Quando o título do painel já nomeia o campo, o rótulo pode ser visualmente oculto (`.sr`), mas nunca é omitido.
-- **Placeholder:** é um exemplo do conteúdo e termina com reticências ("data:image/png;base64,iVBORw0KGgo…"). Nunca substitui o rótulo.
-- **Contador:** no cabeçalho do painel ("12.840 caracteres"; no texto, "22 caracteres · 30 bytes").
-- **Erro:** borda `--err`, `aria-invalid="true"` e mensagem logo abaixo do campo, ligada por `aria-describedby`. A mensagem diz o que corrigir.
-- **Foco:** borda `--ink-2` e anel `--focus` de 2 px com afastamento de 2 px.
+Fica na barra de ações das ferramentas que geram Base64 de imagem. É um `<input type="checkbox">` com aparência de chave e rótulo visível, ligado por padrão, como hoje. A escolha fica salva no navegador e vale para as duas ferramentas.
 
-## 7. Área de upload
-
-| Estado | Aparência |
+| Situação | O que a tela mostra |
 |---|---|
-| Vazio | Borda tracejada de 1,5 px `--field`, fundo `--sunken`, ícone de envio, instrução, botão "Escolher imagem", link "Usar imagem de exemplo" e regras ("PNG, JPG ou WEBP, até 3 MB") |
-| Arquivo por cima | Borda `--ember`, fundo `--ember-tint` |
-| Processando | Status "Convertendo…" no painel de saída |
-| Erro | Mensagem na linha de status, por exemplo "A imagem tem 4,2 MB. O limite é 3 MB; use Imagem → 200 KB antes." |
-| Carregada | A área dá lugar ao visualizador, e "Trocar imagem" aparece abaixo |
+| Ligada, cópia funcionou | Botão Copiar vira "Copiado" (verde, check) e o status diz "Copiado automaticamente · 178.670 caracteres" |
+| Ligada, navegador bloqueou | Status em `--err`: "Pronto, mas o navegador bloqueou a cópia automática. Use Copiar." |
+| Desligada | Status: "Pronto · 178.670 caracteres. Use Copiar." |
 
-Arrastar nunca é a única forma: sempre há um botão, e Ctrl+V funciona nas telas de imagem (critério 2.5.7 da WCAG 2.2).
+### Campos
 
-## 8. Pré-visualizações
+Fundo `--sunken`, borda `--field`, rótulo sempre presente (o título do painel é o `<label>`), placeholder com exemplo e reticências, contador no cabeçalho do painel, erro logo abaixo ligado por `aria-describedby`, `spellcheck="false"` e `translate="no"` no código.
 
-- **Visualizador:** fundo xadrez (20 px) para mostrar transparência, imagem centralizada com `object-fit: contain`, altura máxima de 340 px e sombra leve de duas camadas para destacar a imagem do fundo.
-- **Ficha de dados:** `dl` em 2 colunas, com rótulo em 13 px `--ink-2` e valor em 16 px. Imagem → Base64 mostra Dimensões, Formato, Peso e Proporção. Biometria facial mostra Original, Final, Formato e Peso final.
-- **Biometria facial:** o preview mostra a imagem ajustada, não a original (corrige o achado #3 da auditoria).
-- **Antes e depois** (Imagem → 200 KB): original e comprimida lado a lado, no mesmo tipo de visualizador.
-- **Miniaturas em listas:** 48 × 48 px (40 px no compacto), raio de 6 px.
+### Área de upload
 
-## 9. Régua de tamanho
+Borda tracejada, uma linha "Arraste, cole (Ctrl+V) ou", botão "Escolher imagem" e as regras em uma linha. Depois do envio, some e dá lugar ao arranjo da ferramenta. Arrastar nunca é o único caminho. O link "exemplo" existe só no protótipo.
 
-Componente que mostra o efeito da conversão. Fica abaixo da bancada no desktop e depois do painel de saída no celular.
+### Linha de tamanho (antes "régua")
 
-- Duas barras na mesma escala: entrada em `#6E655B` e saída em `--ember`, ou `--ok` quando a saída é menor.
-- Valor em KB ou MB à direita de cada barra, em coluna própria e com `tabular-nums`.
-- Variação no título: "+33%" em `--ember-ink`, "−92%" em `--ok`, "Já cabe em 200 KB" em `--ok`.
-- Limite opcional: linha vertical de 2 px em `--ink`, com rótulo abaixo da última barra ("Limite 200 KB").
-- Uma frase explica o resultado: "Base64 sempre ocupa cerca de 33% a mais que o arquivo, porque usa 4 caracteres para cada 3 bytes."
-- Vazia: trilhas tracejadas e instrução do que fazer.
-- Movimento: as barras crescem da esquerda em 320 ms ao surgir um resultado. É o único movimento automático do produto e fica desligado com `prefers-reduced-motion`.
+Compacta e contextual: **só aparece quando há resultado.**
+- Uma linha: `Arquivo 130,8 KB → Base64 174,5 KB  +33%`. A variação fica em `--ember-ink` quando cresce, em `--ok` quando diminui e em `--err` quando passa do limite.
+- Duas barras de 4 px na mesma escala; a marca do limite é uma linha de 2 px (só em Imagem → 200 KB).
+- Sem frase explicativa, sem título e sem animação.
 
-## 10. Estados de interação
+### Status, erro, toast e diálogo
 
-| Estado | Tratamento |
+- **Status:** uma linha no painel, com `aria-live="polite"`. Só mostra "Convertendo…" ou "Comprimindo…" se a operação passar de **150 ms**; abaixo disso, vai direto ao resultado.
+- **Erro de entrada:** junto do campo, dizendo o que corrigir.
+- **Toast:** só para ações fora do painel (copiar ou remover da lista, favoritar). Some em 2,6 s.
+- **Diálogo:** `<dialog>` nativo, só para apagar listas inteiras, com foco inicial em "Cancelar".
+- **Não existe** modal de carregamento nem toast de sucesso para conversão.
+
+### Prévias
+
+Fundo xadrez para mostrar transparência. A imagem é centralizada e **nunca ampliada** além do tamanho real. Miniatura de 64 px em Imagem → Base64 e 40 px nas listas.
+
+## 5. Arranjo de cada ferramenta
+
+| Ferramenta | O que domina | Arranjo (notebook) | Celular |
+|---|---|---|---|
+| Imagem → Base64 | O código | Coluna estreita (240 a 320 px): arquivo em linha (miniatura, nome, dimensões, Trocar) e linha de tamanho. Coluna larga: código e ações | Arquivo, código, ações |
+| Biometria facial | A foto ajustada | Coluna média (260 a 400 px) com a foto e "original → final · JPEG 80%". Coluna larga com código mais baixo | Foto, código de 72 px, ações |
+| Base64 → Imagem | A imagem | Duas colunas iguais; decodifica ao colar, sem botão | Código, depois imagem |
+| Imagem → 200 KB | A comparação | Uma faixa: antes e depois lado a lado, linha de tamanho com o limite, Baixar | Igual, lado a lado |
+| Texto ↔ Base64 | Os dois textos | Dois campos com as ações numa coluna no meio | Campo, ações em linha, campo |
+| Histórico / Favoritos | A lista | Lista densa (40 px por item). O Histórico tem a linha de estatísticas no topo | Igual |
+| Início | As ferramentas | Lista de 5 itens (até 720 px de largura) com "última usada" | Igual |
+
+## 6. Navegação
+
+- Barra lateral de 216 px: 5 ferramentas, divisória, Histórico e Favoritos com contagem, e uma linha "Processamento local" no rodapé.
+- Celular (≤ 820 px): barra superior de 48 px (marca e tela atual) e barra inferior com 3 destinos (Ferramentas, Histórico, Favoritos).
+- Sem endereço, o app abre na última ferramenta usada; na primeira visita, no Início.
+- Item ativo com `aria-current="page"`, fundo `--ember-tint` e ícone em brasa.
+
+## 7. Ícones
+
+SVG inline (`<symbol>` + `<use>`), grade de 24 px, traço de 1,75, desenho no estilo Lucide (licença ISC). São 14 símbolos, um significado fixo cada: grade (Ferramentas), imagem, `< >` (Base64 → Imagem), rosto (Biometria), setas para dentro (200 KB), T (Texto), relógio (Histórico), estrela (Favoritos), copiar, baixar, lixeira, check, alerta e a marca. Decorativos levam `aria-hidden`; botões só com ícone levam `aria-label`. Na integração, isso substitui os 28 ícones do Bootstrap Icons, cuja fonte tem 131 KB.
+
+## 8. Desempenho
+
+| Regra | Motivo |
 |---|---|
-| Hover | Superfície um tom acima. Primário vai a `--ember-hover`. Transições de 150 ms, só em cor e borda |
-| Foco | `:focus-visible` com anel `--focus` de 2 px e afastamento de 2 px em todo elemento interativo |
-| Pressionado / selecionado | `aria-pressed` ou `aria-current`, com fundo `--raised` (segmentado) ou `--ember-tint` (navegação) |
-| Processando | `aria-busy`, spinner no botão e verbo no gerúndio com reticências na linha de status ("Convertendo…"). Tempo mínimo de 350 a 450 ms |
-| Sucesso | Linha de status em `--ok` com ícone de check no painel. Toast só para ações fora do painel (copiar de uma lista, favoritar, remover) |
-| Erro | Junto do campo, em `--err`, com ícone de alerta. Diz o que aconteceu e como resolver |
-| Vazio | Texto que convida à ação e botão primário ("Converter imagem") |
-| Destrutivo | Diálogo nativo `<dialog>` com foco inicial em "Cancelar" e botão destrutivo nomeado pela ação ("Limpar histórico") |
+| Nenhuma fonte externa | Evita outra conexão e o texto trocando de fonte depois de aparecer |
+| Nenhuma espera artificial | O resultado aparece quando fica pronto |
+| Indicador só acima de 150 ms | Evita piscar em operações instantâneas |
+| Decodificar Base64 ao colar; ao digitar, 200 ms após a última tecla | Não trabalhar a cada caractere em códigos de centenas de milhares de caracteres |
+| Sem animação automática; transições de 120 ms só em cor e borda, desligadas com `prefers-reduced-motion` | Nada se move sem a pessoa pedir |
+| Ícones inline, sem fonte de ícones | 14 símbolos contra uma fonte de 131 KB |
+| Ler o arquivo uma vez (achado #7) | Metade da leitura e da memória por conversão |
+| Liberar URLs temporárias (`URL.revokeObjectURL`) ao trocar o resultado | Não acumular memória em uso repetido |
 
-Status e toasts usam `role="status"` / `aria-live="polite"`.
-
-## 11. Ícones
-
-- SVG inline (`<symbol>` + `<use>`), grade de 24 px, traço de 1,75 px, pontas arredondadas, cor `currentColor`. Desenho no estilo Lucide (licença ISC). Na integração, isso permitiria deixar de carregar o Bootstrap Icons do CDN.
-- Tamanhos: 20 px em botões e navegação, 16 px em status, 28 a 40 px em áreas de upload.
-- Cada ícone tem um significado fixo:
-
-| Ícone | Significado |
-|---|---|
-| Casa | Início |
-| Imagem | Imagem → Base64 / escolher imagem |
-| Moldura com rosto | Biometria facial |
-| `< >` | Base64 → Imagem |
-| Setas para dentro | Imagem → 200 KB |
-| T | Texto ↔ Base64 |
-| Relógio | Histórico |
-| Estrela | Favoritos / Favoritar |
-| Duas folhas | Copiar |
-| Seta para baixo | Baixar |
-| Lixeira | Limpar / Remover |
-| Seta para cima | Enviar arquivo |
-| Check / alerta | Sucesso / erro |
-| Cadeado | Processamento local |
-
-- Ícone decorativo ao lado de texto leva `aria-hidden`. Botão só com ícone leva `aria-label` específico ("Copiar Base64 de logo.png") e `title`.
-- Sem emoji como ícone.
-
-## 12. Responsividade
+## 9. Responsividade
 
 | Faixa | Comportamento |
 |---|---|
-| > 1080 px | Barra lateral e bancada em 2 colunas (entrada 1fr, saída 1,2fr), régua em largura total abaixo. Início com ferramentas e atividade lado a lado |
-| 901 a 1080 px | Barra lateral e bancada empilhada (entrada, saída, régua) |
-| ≤ 900 px | Sem barra lateral. Barra superior fixa (marca e tela atual), barra inferior com 4 destinos e folha "Ferramentas" |
-| ≤ 600 px | Campos e áreas com 200 px de mínimo. Réguas com o valor abaixo da barra. Ações em linhas que quebram |
+| > 1000 px | Duas colunas nas ferramentas |
+| 821 a 1000 px | Barra lateral; ferramentas em uma coluna |
+| ≤ 820 px | Barras superior e inferior; descrições curtas das telas escondidas |
+| ≤ 420 px | Miniatura do arquivo em 52 px |
 
-- Sem rolagem horizontal de 360 a 1440 px (verificado em 360, 390, 820 e 1400 px).
-- `env(safe-area-inset-*)` na barra superior, na inferior e na folha.
-- Zoom nunca é bloqueado. Campos de texto em 16 px no celular, para o iOS não ampliar a tela.
+Sem rolagem horizontal de 360 a 1440 px. `env(safe-area-inset-*)` nas barras. Zoom nunca bloqueado; campos de texto em 16 px no celular.
 
-## 13. Acessibilidade
+## 10. Acessibilidade
 
-- Contraste: texto ≥ 4,5:1 e bordas de controles ≥ 3:1 (tabela na seção 1).
-- Todo controle é operável por teclado, na ordem visual. Diálogos usam `<dialog>` com `showModal()` (foco preso, Esc fecha).
-- Hierarquia de títulos: um `h1` por tela e `h2` nos painéis e seções. Regiões com `aria-labelledby`.
-- Botão ativo de segmentado com `aria-pressed`; item de navegação ativo com `aria-current="page"`.
-- Mensagens de status com `aria-live="polite"`; erros ligados ao campo com `aria-describedby`.
-- `prefers-reduced-motion: reduce` desliga transições e o crescimento da régua.
-- Alvos de toque de no mínimo 44 × 44 px.
-- `lang="pt-BR"`, e o código Base64 com `translate="no"`.
+Contraste conforme a seção 1 · foco visível com `:focus-visible` · todo campo com `<label>` · botões só com ícone com `aria-label` · status com `aria-live="polite"` e erros de arquivo com `role="alert"` · `aria-pressed` no favorito · `<dialog>` nativo · alternativa ao arrasto (botão e Ctrl+V) · `prefers-reduced-motion` respeitado · `lang="pt-BR"`.
 
-## 14. Voz e texto
+## 11. Voz e texto
 
-- Verbos no imperativo e frases curtas: "Escolher imagem", "Mostrar imagem", "Copiar".
-- A mesma ação tem o mesmo nome do botão à confirmação: "Favoritar" → "Adicionado aos favoritos".
-- Erros dizem o que houve e como resolver, sem pedir desculpas.
-- Números no formato pt-BR ("191.642 caracteres", "140,3 KB").
+Frases curtas e no imperativo. A mesma ação tem o mesmo nome até a confirmação (Copiar → Copiado). Erros dizem o que houve e como resolver ("A imagem tem 4,2 MB. O limite é 3 MB; reduza em Imagem → 200 KB."). Números em pt-BR ("178.670 caracteres", "130,8 KB").
