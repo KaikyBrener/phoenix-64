@@ -1,133 +1,173 @@
 # Decisões de design — PHOENIX V5
 
-Registro do que mudou na proposta, por quê, e o que ainda precisa de aprovação. Para cada decisão: como é hoje (`main`, commit `2eebca2`), o que se propõe, o motivo e o problema do [canvas](UX_CANVAS_PHOENIX_V5.md) que ela resolve.
+Registro do que se propõe, por quê, e o que ainda precisa de aprovação. **Revisão 2:** decisões revistas com o requisito principal de que o Phoenix abra rápido, responda rápido e não atrapalhe operações repetidas. Para cada decisão: como é hoje (`main`, commit `2eebca2`), a proposta, o motivo e os problemas do [canvas](UX_CANVAS_PHOENIX_V5.md) que ela resolve.
 
 ## Resumo
 
-| # | Decisão | Resolve | Aprovação |
-|---|---|---|---|
-| D1 | Início vira área de soltar imagem + lista de ferramentas | P9 | Sim |
-| D2 | Navegação sem duplicidade; Biometria facial com entrada própria | P1, P2 | Sim |
-| D3 | Mesmo esqueleto em todas as ferramentas (entrada, saída, ações) | P4, P8 | Não |
-| D4 | Régua de tamanho como componente de assinatura | P11 | Sim |
-| D5 | Brasa só para ação e seleção; vermelho só para erro | P3 | Não |
-| D6 | Paleta carvão quente, sem brilhos nem gradientes | P12 | Sim |
-| D7 | Cópia automática: manter, mas avisar e permitir desligar | P10 | Sim |
-| D8 | Status no painel e toasts no lugar de modais | P5 | Não |
-| D9 | Etiqueta de formato e contagem no código | P2, P11 | Não |
-| D10 | IBM Plex Sans + Plex Mono no lugar de Inter | — | Sim |
-| D11 | Barra inferior com 4 destinos no celular | — | Sim |
-| D12 | Ícones SVG inline em vez de Bootstrap Icons | P6 | Não |
-| D13 | Nome e versão do produto | P13 | Sim |
+| # | Decisão | Resolve | Mudou na revisão 2 | Aprovação |
+|---|---|---|---|---|
+| D1 | Abrir na última ferramenta; Início é só a lista de ferramentas | P9 | Sim | Sim |
+| D2 | Uma entrada por ferramenta; Biometria facial com tela própria | P1, P2 | Sim | Sim |
+| D3 | Componentes iguais, arranjo próprio por ferramenta | P4, P8 | Sim | Não |
+| D4 | Linha de tamanho compacta, só com resultado | P11 | Sim | Não |
+| D5 | Brasa só para ação e seleção; vermelho só para erro | P3 | Não | Não |
+| D6 | Carvão quente, sem efeitos | P12 | Não | Sim |
+| D7 | Cópia automática com chave e confirmação clara | P10 | Sim | Não |
+| D8 | Sem espera artificial; indicador só acima de 150 ms | P5 | Sim | Não |
+| D9 | Etiqueta de formato e contagem no código | P2, P11 | Não | Não |
+| D10 | Fontes do sistema | P15 | Sim (substitui IBM Plex) | Sim |
+| D11 | Barra inferior com 3 destinos no celular | — | Sim | Sim |
+| D12 | Ícones SVG inline | P6, P14 | Não | Não |
+| D13 | Nome e versão do produto | P13 | Não | Sim |
+| D14 | Base64 → Imagem decodifica ao colar | — | Nova | Sim |
+| D15 | Reduzir dependências do app | P14 | Nova | Sim |
+| D16 | Estatísticas no Histórico, com a regra original | P9 | Nova | Sim |
+| D17 | Compressão nunca anuncia sucesso acima de 200 KB | — | Nova | Não |
+| D18 | Alturas limitadas pela tela | P4 | Nova | Não |
 
 ---
 
-### D1. Início direto ao trabalho
+### D1. Abrir na última ferramenta
 
-- **Antes:** saudação "Bem-vindo ao PHOENIX V5", selo de privacidade e quatro cartões de métricas. Para converter, a pessoa precisa abrir outra tela.
-- **Proposta:** título "O que você vai converter?", uma área grande para soltar, escolher ou colar a imagem (leva direto a Imagem → Base64 com o arquivo carregado), a lista das cinco ferramentas com o que entra e o que sai, e o bloco "Atividade" com as mesmas quatro estatísticas e as três conversões recentes.
-- **Por quê:** a ação mais comum vira o primeiro elemento da tela. As estatísticas continuam lá, mas não ocupam o lugar da ferramenta. A Frontend Design pede que a abertura mostre o que é mais característico do assunto; aqui, isso é a conversão.
+- **Antes:** a primeira tela é uma saudação com quatro cartões de métricas; para converter é preciso abrir outra tela.
+- **Revisão 1:** Início com área de soltar, lista de ferramentas, métricas e recentes.
+- **Revisão 2:** sem endereço, o app abre **direto na última ferramenta usada** (guardada no navegador). Na primeira visita, abre o Início, que é só a lista das 5 ferramentas com a marca "última usada". Soltar ou colar uma imagem no Início ainda leva a Imagem → Base64.
+- **Por quê:** em uso repetido, a ferramenta já está aberta ao entrar: zero cliques antes de colar a imagem.
+- **Precisa aprovar:** abrir na última ferramenta ou sempre no Início com a última ferramenta em primeiro lugar. A primeira opção é mais rápida; a segunda é mais previsível.
+- **Custo técnico:** uma chave nova no `localStorage` (por exemplo, `phoenix_ultima_ferramenta`), sem tocar nas chaves existentes.
 
-### D2. Uma ferramenta, um lugar
+### D2. Uma ferramenta, uma tela
 
-- **Antes:** "Conversor" e "Imagem → Base64" abrem a mesma tela. A Biometria facial é um modo escondido dentro dela.
-- **Proposta:** grupos "Ferramentas" (5) e "Seus dados" (2). Biometria facial vira item próprio, com endereço `#biometria`, e compartilha a tela com Imagem → Base64 através do controle "Padrão | Biometria facial". O motor de conversão é o mesmo de hoje.
-- **Por quê:** quem faz cadastro facial chega pela tarefa, não pelo formato. Links diretos fazem Voltar e compartilhamento funcionarem (diretriz Vercel: estado na URL).
-- **Precisa aprovar:** o nome "Biometria facial" no menu, ou outro, como "Foto para cadastro facial".
+- **Antes:** "Conversor" e "Imagem → Base64" abrem a mesma tela. Biometria facial é um modo escondido dentro dela.
+- **Revisão 2:** Biometria facial tem tela própria (`#biometria`), sem o controle "Padrão | Biometria facial". O motor de conversão continua o mesmo.
+- **Por quê:** quem faz cadastro facial chega pela tarefa. Sem o controle segmentado, a tela tem um elemento a menos e não reprocessa sem pedido.
+- **Troca:** a imagem carregada não passa de uma ferramenta para a outra.
+- **Precisa aprovar:** o nome do item ("Biometria facial" ou "Foto para cadastro facial").
 
-### D3. Esqueleto único: entrada, saída, ações
+### D3. Componentes iguais, arranjos diferentes
 
-- **Antes:** cada aba tem layout próprio (colunas 4/8, 6/6, cartões numerados "1." e "2.", seção de download separada). Os nomes das ações variam.
-- **Proposta:** painel de entrada à esquerda e de saída à direita, cada um com título e metadado no cabeçalho, e ações no painel de saída com nomes padronizados (Copiar, Baixar…, Favoritar, Limpar). No celular, a ordem fica entrada → saída → régua.
-- **Por quê:** aprender uma ferramenta ensina as outras. Também resolve os vazios desequilibrados, porque os dois painéis têm a mesma altura mínima.
+- **Revisão 1:** o mesmo esqueleto de entrada, saída e régua em todas as ferramentas.
+- **Revisão 2:** botões, campos, status e linha de tamanho são idênticos, mas cada tela é arranjada pelo que se confere nela:
+  - Imagem → Base64: o arquivo vira uma linha compacta e o **código** ocupa a maior área;
+  - Biometria facial: a **foto ajustada** fica em destaque, para conferir enquadramento e tamanho;
+  - Base64 → Imagem: código e **imagem** lado a lado;
+  - Imagem → 200 KB: **antes e depois** lado a lado;
+  - Texto ↔ Base64: dois campos com as ações no meio.
+- **Por quê:** um esqueleto único gerava painéis vazios (ex.: prévia grande onde o que importa é o código).
 
-### D4. Régua de tamanho
+### D4. Linha de tamanho
 
-- **Antes:** tamanhos aparecem como números soltos em blocos de estatística ("Tamanho Imagem", "Tamanho Base64").
-- **Proposta:** duas barras na mesma escala (entrada e saída), variação percentual no título, linha de limite quando existe (200 KB) e uma frase que explica o resultado.
-- **Por quê:** é a informação que o Phoenix tem e outras ferramentas não mostram: o Base64 cresce cerca de 33%, a Biometria facial reduz mais de 90%, e a compressão mostra quanto sobra até 200 KB. É o elemento de identidade da proposta, porque vem do próprio trabalho da ferramenta e não é enfeite.
-- **Precisa aprovar:** se a régua entra em todas as ferramentas de imagem ou só em Biometria facial e Imagem → 200 KB.
+- **Revisão 1:** régua em painel próprio, de largura total, com título, frase explicativa, estado vazio e animação.
+- **Revisão 2:** uma linha de números (`Arquivo 130,8 KB → Base64 174,5 KB +33%`) e duas barras de 4 px, **só quando há resultado**, dentro do painel da entrada. Sem animação. A marca do limite aparece só em Imagem → 200 KB.
+- **Por quê:** a informação continua (crescimento do Base64, redução da Biometria, distância até 200 KB), mas em uma linha e duas barras finas, em vez de um painel próprio que aparecia até sem resultado.
 
 ### D5. Cor com significado
 
-- **Antes:** a marca é aplicada com classes de erro do Bootstrap (`btn-danger`, `text-danger`, `border-danger`), 35 vezes no HTML.
-- **Proposta:** `--ember` (o mesmo `#FF6B1A`) para ação primária e seleção; `--err` (`#F2617A`) só para erro e exclusão; `--ok` para sucesso e redução.
-- **Por quê:** hoje um botão "Converter" e um erro têm a mesma cor. A UI/UX Pro Max pede tokens semânticos e não depender só da cor; a Vercel, não usar cor como único sinal de estado.
+- **Antes:** a marca usa as classes de erro do Bootstrap (35 vezes).
+- **Proposta:** `--ember` (mesmo `#FF6B1A`) para ação e seleção; `--err` só para erro e exclusão; `--ok` para sucesso, "Copiado" e redução.
 
-### D6. Paleta carvão quente, sem efeitos
+### D6. Carvão quente, sem efeitos
 
-- **Antes:** preto `#050505`, gradientes radiais laranja e branco no fundo, grade sobreposta, superfícies translúcidas com desfoque e sombras com brilho laranja.
-- **Proposta:** carvão `#12100E` com superfícies opacas em degraus (`#1A1714`, `#24201C`, `#0D0C0A`), bordas finas e sombra só em toast e diálogo.
-- **Por quê:** o laranja continua sendo a marca, mas aparece onde importa. O tom quente do fundo vem da própria brasa e evita o par genérico "preto puro + uma cor neon", que a Frontend Design aponta como sinal de interface feita por IA. Sem desfoque nem brilho, o app fica mais leve em celular.
-- **Precisa aprovar:** o abandono do preto puro e do brilho, que são marcas visuais da versão atual.
+- **Antes:** preto `#050505`, gradientes radiais, grade sobreposta, superfícies translúcidas com desfoque e brilho laranja.
+- **Proposta:** carvão `#12100E` com superfícies opacas e bordas finas. Sombra só em toast e diálogo.
+- **Por quê:** o laranja continua sendo a marca, mas aparece onde importa. Sem desfoque e brilho, a página também pinta mais rápido em celulares fracos.
+- **Precisa aprovar:** abandonar o preto puro e o brilho.
 
-### D7. Cópia automática visível
+### D7. Cópia automática configurável e visível
 
-- **Antes:** `CONFIG.autoCopy = true`. Toda conversão sobrescreve a área de transferência, e o aviso é um toast.
-- **Proposta no protótipo:** manter o comportamento, mas anunciar na linha de status ("Pronto. 191.642 caracteres copiados automaticamente.") e, se a cópia falhar, orientar a usar Copiar.
-- **Proposta para decidir:** adicionar um controle "Copiar ao converter", ligado por padrão e lembrado no navegador. Não está no protótipo, porque seria uma função nova.
-- **Por quê:** sobrescrever a área de transferência sem pedido pode apagar algo que a pessoa ia colar.
+- **Antes:** `CONFIG.autoCopy = true`, sem controle; o aviso é um toast.
+- **Revisão 2:** chave "Copiar ao converter" na barra de ações, ligada por padrão e lembrada no navegador. Confirmação em dois lugares que a pessoa já está olhando: o botão vira "Copiado" (verde, com check) por 2,5 s, e o status diz "Copiado automaticamente · N caracteres". Se o navegador bloquear, o status avisa e orienta a usar Copiar.
+- **Custo técnico:** uma chave nova no `localStorage`.
 
-### D8. Feedback sem modal
+### D8. Sem espera artificial
 
-- **Antes:** modal de "Processando…" (SweetAlert2) em operações quase instantâneas, seguido de um toast "Sucesso!".
-- **Proposta:** spinner dentro do botão, com o rótulo mantido; linha de status no painel com tempo mínimo de 350 a 450 ms, para não piscar; toasts só para ações fora do painel. O diálogo modal fica só para confirmar exclusões.
-- **Por quê:** modal interrompe e esconde o resultado. A Vercel orienta botões de carregamento com spinner e rótulo, indicadores com tempo mínimo e anúncios via `aria-live`.
+- **Antes:** modal "Processando…" a cada conversão, seguido de um toast "Sucesso!".
+- **Revisão 1:** linha de status com tempo **mínimo** de 350 a 450 ms (uma pausa artificial).
+- **Revisão 2:** nenhuma pausa. O status "Convertendo…" só aparece se a operação passar de 150 ms; antes disso, o resultado já está na tela. Sem modal e sem toast de sucesso na conversão.
+- **Medido no protótipo:** Imagem → Base64 de 1200 × 800 em 48 a 126 ms, sem indicador. Compressão de 2,6 MB para 195 KB em 0,64 a 0,75 s, com indicador.
 
 ### D9. Formato explícito
 
-- **Antes:** o modo Padrão entrega data URL e o facial entrega Base64 puro (`main.js:183` e `:210-216`), sem indicação.
-- **Proposta:** etiqueta "Data URL" ou "Base64 puro" no cabeçalho do painel de saída, e contagem de caracteres no status.
-- **Por quê:** colar o formato errado é a falha mais provável na integração com outros sistemas (hipótese H2).
+Etiqueta "Data URL" ou "Base64 puro" no painel de saída e contagem de caracteres no status. O modo Padrão gera data URL e a Biometria facial gera Base64 puro (`main.js:183` e `:210-216`).
 
-### D10. Tipografia IBM Plex
+### D10. Fontes do sistema
 
-- **Antes:** Inter em todos os pesos, de 300 a 900.
-- **Proposta:** IBM Plex Sans (400, 500, 600) na interface e IBM Plex Mono (400) só no conteúdo Base64.
-- **Por quê:** a Plex tem desenho técnico, de engenharia, que combina com uma bancada de conversão, e a família inclui uma versão mono para o código. Três pesos bastam e carregam menos que sete. A UI/UX Pro Max sugeriu JetBrains Mono para títulos; a proposta usa mono só no código, porque títulos em mono pesam a leitura.
-- **Precisa aprovar:** a troca de fonte.
+- **Antes:** Inter em 7 pesos via Google Fonts.
+- **Revisão 1:** IBM Plex Sans e Plex Mono via Google Fonts.
+- **Revisão 2:** `system-ui` e `ui-monospace`. Nenhum arquivo de fonte é baixado.
+- **Por quê:** fonte externa adiciona outra conexão e arquivos antes do texto aparecer na forma final, e a fonte do sistema é a que cada pessoa já lê melhor no seu aparelho. A identidade fica com a cor, a marca e o arranjo.
+- **Precisa aprovar:** abrir mão de uma fonte própria.
 
-### D11. Navegação no celular
+### D11. Barra inferior com 3 destinos
 
 - **Antes:** botão "Menu" que abre um painel lateral com oito itens.
-- **Proposta:** barra superior com a marca e a tela atual, e barra inferior fixa com Início, Ferramentas (abre uma folha com as cinco), Histórico e Favoritos.
-- **Por quê:** os destinos ficam ao alcance do polegar e a barra inferior respeita o limite de cinco itens (UI/UX Pro Max, "bottom nav ≤ 5").
-- **Precisa aprovar:** a barra inferior. A alternativa é manter o painel lateral atual, só reorganizado.
+- **Revisão 2:** barra inferior com Ferramentas, Histórico e Favoritos. A folha extra de ferramentas da revisão 1 saiu: "Ferramentas" abre o Início, que já é a lista.
+- **Precisa aprovar:** barra inferior ou o painel lateral atual reorganizado.
 
-### D12. Ícones
+### D12. Ícones SVG inline
 
-- **Antes:** Bootstrap Icons via CDN, e Lucide carregado sem uso. Botões só com ícone sem nome acessível.
-- **Proposta:** conjunto pequeno de SVG inline com significado fixo, `aria-hidden` quando decorativos, `aria-label` e `title` em botões só com ícone.
-- **Por quê:** menos requisições externas e nenhum ícone sem função.
+14 símbolos inline no lugar de uma fonte de 131 KB (mais 14 KB de CSS) usada para 28 ícones. Botões só com ícone ganham `aria-label`.
 
 ### D13. Nome e versão
 
-- **Antes:** "PHOENIX V5" em caixa alta no título, comentário "PHOENIX V4" no CSS e repositório `phoenix-64`.
-- **Proposta:** marca "Phoenix" com a versão discreta ao lado ("V5") só na barra lateral.
-- **Precisa aprovar:** qual é a versão oficial e se ela deve aparecer na interface.
+Marca "Phoenix" sem versão na interface; a versão fica no README e no título da página. **Precisa aprovar:** qual é a versão oficial (V5 ou outra) e se ela aparece na interface.
+
+### D14. Base64 → Imagem sem botão
+
+- **Antes:** colar o código e clicar em "Converter para Imagem".
+- **Proposta:** a imagem aparece ao colar. Ao digitar, decodifica 200 ms depois da última tecla. Erros aparecem junto do campo.
+- **Por quê:** tira um passo da tarefa mais comum da tela.
+- **Precisa aprovar:** remover o botão.
+
+### D15. Reduzir dependências do app
+
+| Dependência | Peso comprimido | Proposta |
+|---|---|---|
+| Inter (7 pesos) | não medido | Remover (D10) |
+| Bootstrap Icons (CSS + fonte) | 144,5 KB | Trocar por SVG inline (D12) |
+| SweetAlert2 (JS + CSS) | 25,6 KB | Trocar por status no painel, toast simples e `<dialog>` nativo (D8) |
+| Lucide | não medido | Remover (já feito no PR #5) |
+| Bootstrap CSS + JS | 54 KB | Manter nesta etapa. O JS só serve ao menu do celular, que a barra inferior dispensa; o CSS sustenta o layout atual e trocá-lo é uma etapa própria |
+
+As trocas de ícones e de alertas tiram cerca de 170 KB comprimidos de terceiros, sem contar a Inter. Para comparar: o código do próprio app tem cerca de 27 KB comprimido. **Precisa aprovar:** a ordem das trocas e se o Bootstrap fica.
+
+### D16. Estatísticas no Histórico
+
+- **Antes:** quatro cartões no topo do dashboard.
+- **Proposta:** uma linha no topo do Histórico ("Hoje 4 · Total 37 · Taxa de sucesso 95%"); o número de favoritos aparece no menu. O cálculo não muda: só conta tentativa depois que o arquivo passa na validação, e a taxa é conversões concluídas ÷ tentativas válidas × 100. Base64 → Imagem, 200 KB e Texto não entram, como hoje.
+- **Precisa aprovar:** tirar as estatísticas da primeira tela.
+
+### D17. Compressão honesta
+
+A simulação do protótipo segue as regras de `compressor.js` (formato de saída, busca de qualidade entre 70% e 95%, redução de dimensões até 32 px). Se o resultado não couber em 200 KB, a tela mostra "Não foi possível chegar a 200 KB. O menor resultado ficou com N" em vermelho, a linha de tamanho marca "acima do limite" e o download fica desabilitado. Testado forçando um limite impossível.
+
+### D18. Alturas limitadas pela tela
+
+Campos e prévias usam `clamp()` com base na altura da janela, e os painéis não esticam para igualar a coluna vizinha. Os títulos das telas diminuíram (até 26 px) e as descrições somem no celular. Verificado: a ação principal fica visível sem rolar em 1366 × 700, 1024 × 640, 390 × 740 e 360 × 640.
 
 ---
 
 ## O que não muda
 
 - Regras de conversão (`services.js`, `conversor.js`, `compressor.js`): limites, formatos, qualidade e dimensões.
-- Armazenamento: IndexedDB para histórico e favoritos, localStorage para estatísticas. O protótipo guarda tudo só em memória e não toca nesses dados.
-- Histórico com 20 itens, favoritos sem limite (o achado #6 continua em aberto), estatísticas com o mesmo cálculo.
-- HTML, CSS e JavaScript sem framework. O protótipo é um arquivo HTML único, no mesmo estilo de tecnologia do app.
+- Armazenamento de histórico, favoritos e estatísticas (IndexedDB e localStorage). As únicas chaves novas propostas são a última ferramenta (D1) e a preferência de cópia (D7).
+- Histórico com 20 itens; favoritos sem limite (o achado #6 continua aberto).
+- HTML, CSS e JavaScript sem framework.
 
 ## Decisões que precisam de aprovação
 
-1. **D1:** o Início sem a saudação e sem os cartões de métricas no topo.
-2. **D2:** Biometria facial como item próprio do menu, e o nome desse item.
-3. **D4:** onde a régua de tamanho aparece.
-4. **D6:** sair do preto puro e remover os efeitos de brilho.
-5. **D7:** criar ou não o controle de cópia automática.
-6. **D10:** trocar Inter por IBM Plex.
-7. **D11:** barra inferior no celular.
-8. **D13:** nome e versão exibidos.
+1. **D1:** abrir na última ferramenta ou no Início.
+2. **D2:** Biometria facial com tela própria, e o nome do item.
+3. **D6:** sair do preto puro e remover os brilhos.
+4. **D10:** fontes do sistema no lugar de uma fonte própria.
+5. **D11:** barra inferior no celular.
+6. **D13:** versão exibida.
+7. **D14:** Base64 → Imagem sem o botão de converter.
+8. **D15:** ordem das trocas de dependência e destino do Bootstrap.
+9. **D16:** estatísticas fora da primeira tela.
 
 ## Pendências técnicas para a integração
 
-- Antes de levar a `dev` para a `main`, decidir se `prototipo/` e `docs/` devem ser publicados. O `wrangler.jsonc` publica a raiz inteira, então hoje eles iriam para o site (ver achado #2).
-- No protótipo, a compressão para 200 KB é uma versão simplificada só para demonstrar a tela; o algoritmo real é o de `compressor.js`.
-- Os achados técnicos #1, #2, #4, #6 e #7 da auditoria seguem abertos e não dependem do redesign.
+- Antes de mesclar a `dev` na `main`, decidir se `prototipo/` e `docs/` devem ser publicados: o `wrangler.jsonc` publica a raiz inteira (achado #2).
+- O protótipo expõe `window.__proto` só para os testes automáticos; isso não vai para o app.
+- Achados técnicos #1, #2, #4, #6 e #7 seguem abertos; o #7 entra no plano de desempenho.
