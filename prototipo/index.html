@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#12100E">
 <meta name="color-scheme" content="dark">
-<title>Phoenix V5 protótipo</title>
+<title>Phoenix V5</title>
 <style>
 /* VOICE  ferramenta de uso diário: rápida, direta, sem enfeite
    IDEA   bancada de conversão; cada ferramenta com o arranjo que a tarefa pede
@@ -67,7 +67,6 @@ h1{font-size:clamp(22px,2.2vw,26px);line-height:1.2;font-weight:600;letter-spaci
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .btn.sq{width:40px;padding:0}
 .btn[aria-pressed=true]{color:var(--ember)}
-.linkbtn{background:none;border:0;padding:4px 2px;color:var(--ember-ink);text-decoration:underline;text-underline-offset:3px;font-size:14px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .row .end{margin-left:auto}
 .switch{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2);cursor:pointer;min-height:40px}
@@ -227,7 +226,7 @@ dialog .row{justify-content:flex-end}
       <a href="#historico" data-nav="historico"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Histórico<span class="count" data-count="hist"></span></a>
       <a href="#favoritos" data-nav="favoritos"><svg class="icon" aria-hidden="true"><use href="#i-star"/></svg>Favoritos<span class="count" data-count="fav"></span></a>
     </nav>
-    <p class="side-foot">Processamento local. Protótipo com dados fictícios.</p>
+    <p class="side-foot">Processamento local. Nada é enviado para servidores.</p>
   </aside>
 
   <header class="topbar">
@@ -240,7 +239,6 @@ dialog .row{justify-content:flex-end}
       <div class="head"><h1 id="t-inicio">Ferramentas</h1></div>
       <ul class="tools" id="tools"></ul>
       <p class="hint">Solte ou cole (Ctrl+V) uma imagem nesta tela para gerar o Base64 direto.</p>
-      <p class="hint note">Protótipo: histórico, favoritos e estatísticas são fictícios e não são salvos. Só a última ferramenta usada e a preferência de cópia automática ficam guardadas neste navegador.</p>
     </section>
 
     <section data-view="imagem-base64" aria-labelledby="t-img">
@@ -250,7 +248,7 @@ dialog .row{justify-content:flex-end}
           <div class="drop" id="img-drop">
             <p>Arraste, cole (Ctrl+V) ou</p>
             <button class="btn primary" data-pick="img"><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>Escolher imagem</button>
-            <p>PNG, JPG ou WEBP até 3 MB · <button class="linkbtn" data-sample="img">exemplo</button></p>
+            <p>PNG, JPG ou WEBP até 3 MB</p>
           </div>
           <div class="file" id="img-file" hidden><img alt=""><span><b></b><small></small></span><button class="btn ghost" data-pick="img">Trocar</button></div>
           <div class="size" id="img-size" hidden></div>
@@ -278,7 +276,7 @@ dialog .row{justify-content:flex-end}
           <div class="drop" id="face-drop">
             <p>Arraste, cole (Ctrl+V) ou</p>
             <button class="btn primary" data-pick="face"><svg class="icon" aria-hidden="true"><use href="#i-face"/></svg>Escolher foto</button>
-            <p>PNG, JPG ou WEBP até 3 MB · <button class="linkbtn" data-sample="face">exemplo</button></p>
+            <p>PNG, JPG ou WEBP até 3 MB</p>
           </div>
           <div class="check" id="face-view" hidden><img id="face-img" alt=""></div>
           <div class="panel-h" id="face-meta" hidden><span class="meta" id="face-dims"></span><button class="btn ghost" data-pick="face">Trocar</button></div>
@@ -307,7 +305,7 @@ dialog .row{justify-content:flex-end}
           <div class="panel-h"><h2><label for="b64-in">Código</label></h2><span class="meta" id="b64-count">0 caracteres</span></div>
           <textarea id="b64-in" class="code" placeholder="data:image/png;base64,iVBORw0KGgo… ou só iVBORw0KGgo…" spellcheck="false" aria-describedby="b64-err" translate="no"></textarea>
           <p class="err-msg" id="b64-err" hidden></p>
-          <div class="row"><button class="btn ghost" id="b64-clear">Limpar</button><button class="linkbtn end" id="b64-sample">Colar exemplo</button></div>
+          <div class="row"><button class="btn ghost" id="b64-clear">Limpar</button></div>
         </div>
         <div class="panel">
           <div class="panel-h"><h2>Imagem</h2><span class="meta" id="b64-meta"></span></div>
@@ -323,7 +321,7 @@ dialog .row{justify-content:flex-end}
         <div class="drop" id="cmp-drop">
           <p>Arraste, cole (Ctrl+V) ou</p>
           <button class="btn primary" data-pick="cmp"><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>Escolher imagem</button>
-          <p>PNG, JPG ou WEBP · <button class="linkbtn" data-sample="cmp">exemplo</button></p>
+          <p>PNG, JPG ou WEBP</p>
         </div>
         <div class="compare" id="cmp-res" hidden>
           <figure><div class="check"><img id="cmp-a" alt="Original"></div><figcaption id="cmp-ca"></figcaption></figure>
@@ -360,7 +358,7 @@ dialog .row{justify-content:flex-end}
       <div class="head"><h1 id="t-hist">Histórico</h1><button class="btn danger" id="hist-clear">Limpar histórico</button></div>
       <p class="stats" id="stats"></p>
       <ul class="list" id="hist-list"></ul>
-      <p class="note">Mantém as 20 conversões mais recentes. Itens fictícios do protótipo.</p>
+      <p class="note">Mantém as 20 conversões mais recentes.</p>
     </section>
 
     <section data-view="favoritos" aria-labelledby="t-fav">
@@ -395,7 +393,7 @@ const TOOLS = [
   ['texto', 'Texto ↔ Base64', 'Codifica e decodifica UTF-8', 'i-text'],
 ];
 const TITLES = Object.fromEntries([['inicio', 'Ferramentas'], ['historico', 'Histórico'], ['favoritos', 'Favoritos'], ...TOOLS.map((t) => [t[0], t[1]])]);
-const store = { get(k, d) { try { const v = localStorage.getItem('phoenix_proto_' + k); return v === null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('phoenix_proto_' + k, JSON.stringify(v)); } catch {} } };
+const store = { get(k, d) { try { const v = localStorage.getItem('phoenix_' + k); return v === null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('phoenix_' + k, JSON.stringify(v)); } catch {} } };
 
 const kb = (b) => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} KB` : `${(b / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} MB`;
 const num = (n) => n.toLocaleString('pt-BR');
@@ -451,37 +449,13 @@ function sizeLine(el, o) {
   <div class="bars" aria-hidden="true"><div class="bar" style="width:${o.a / max * 100}%"></div><div class="bar out ${cls}" style="width:${o.b / max * 100}%"></div>${o.limit ? `<span class="lim" style="left:calc(${o.limit / max * 100}% - 1px)"></span>` : ''}</div>`;
 }
 
-/* Dados fictícios do protótipo */
-function thumb(h1, h2, face) {
-  const c = document.createElement('canvas'); c.width = c.height = 80; const x = c.getContext('2d');
-  const g = x.createLinearGradient(0, 0, 80, 80); g.addColorStop(0, h1); g.addColorStop(1, h2); x.fillStyle = g; x.fillRect(0, 0, 80, 80);
-  x.fillStyle = 'rgba(255,255,255,.85)'; x.beginPath();
-  if (face) { x.arc(40, 32, 13, 0, 7); x.fill(); x.beginPath(); x.ellipse(40, 78, 26, 22, 0, 0, 7); } else { x.moveTo(40, 16); x.lineTo(64, 62); x.lineTo(16, 62); }
-  x.fill(); return c.toDataURL('image/png');
-}
-const now = Date.now();
 const state = {
-  // Mesma regra do app: taxa = conversões concluídas / tentativas válidas × 100
-  stats: { hoje: 4, total: 37, tentativas: 39 },
-  hist: [['fachada-bloco-b.jpg', 'JPEG', 412300, '#3B5A7A', '#C98A4B', 0, 26], ['cadastro_morador_facial.jpg', 'JPEG', 38900, '#5B4A3F', '#A88B74', 1, 95], ['logo-condominio.png', 'PNG', 18450, '#1E6E5C', '#2DA383', 0, 180], ['planta-garagem.webp', 'WEBP', 233800, '#4A4F63', '#8F94A8', 0, 600], ['banner-aviso.png', 'PNG', 96100, '#7A2E2E', '#D2694B', 0, 3100]]
-    .map(([nome, tipo, bytes, a, b, f, min], i) => { const p = thumb(a, b, f); return { id: 'h' + i, nome, tipo, bytes, preview: p, base64: p, data: now - min * 60000 }; }),
-  fav: [], tok: {},
+  // Taxa de sucesso = conversões concluídas / tentativas válidas × 100
+  stats: { hoje: 0, total: 0, tentativas: 0 },
+  hist: [], fav: [], tok: {},
 };
-state.fav = [{ ...state.hist[1], id: 'f1' }, { ...state.hist[2], id: 'f2' }];
 let autoCopy = store.get('autocopy', true);
 $$('[data-autocopy]').forEach((c) => { c.checked = autoCopy; c.addEventListener('change', () => { autoCopy = c.checked; store.set('autocopy', autoCopy); $$('[data-autocopy]').forEach((o) => o.checked = autoCopy); }); });
-
-/* Imagens de exemplo, geradas na hora só para avaliar o protótipo */
-function sampleFile(kind) {
-  const face = kind === 'face', heavy = kind === 'cmp';
-  const c = document.createElement('canvas'); c.width = face ? 900 : heavy ? 2400 : 1200; c.height = face ? 1125 : heavy ? 1600 : 800; const x = c.getContext('2d'); const W = c.width, H = c.height;
-  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, face ? '#C9D3DB' : '#28415C'); g.addColorStop(1, face ? '#8C9AA6' : '#E39A5B'); x.fillStyle = g; x.fillRect(0, 0, W, H);
-  let s = 7; const rnd = () => (s = s * 16807 % 2147483647) / 2147483647;
-  for (let i = 0; i < (heavy ? 160000 : 2500); i++) { x.fillStyle = `rgba(${rnd() > .5 ? 255 : 0},${rnd() > .5 ? 255 : 0},${rnd() > .5 ? 255 : 0},.05)`; x.fillRect(rnd() * W, rnd() * H, 2, 2); }
-  if (face) { x.fillStyle = '#5D4636'; x.beginPath(); x.ellipse(W / 2, H * .43, W * .2, H * .2, 0, 0, 7); x.fill(); x.fillStyle = '#C89A78'; x.beginPath(); x.ellipse(W / 2, H * .45, W * .16, H * .17, 0, 0, 7); x.fill(); x.fillStyle = '#2F3C4A'; x.beginPath(); x.ellipse(W / 2, H * 1.02, W * .42, H * .34, 0, 0, 7); x.fill(); }
-  else { x.fillStyle = '#FFD7A8'; x.beginPath(); x.arc(W * .72, H * .38, H * .1, 0, 7); x.fill(); x.fillStyle = '#1C2A3A'; x.beginPath(); x.moveTo(0, H); for (let i = 0; i <= 12; i++) x.lineTo(W * i / 12, H * .65 - rnd() * H * .15); x.lineTo(W, H); x.fill(); }
-  return new Promise((r) => c.toBlob((b) => r(new File([b], face ? 'retrato-exemplo.png' : heavy ? 'foto-grande-exemplo.png' : 'paisagem-exemplo.png', { type: 'image/png' })), 'image/png'));
-}
 
 /* Navegação: sem endereço, abre na última ferramenta usada */
 function route() {
@@ -575,7 +549,6 @@ function handle(file, target) {
 }
 $$('[data-pick]').forEach((b) => b.addEventListener('click', () => { pickTarget = b.dataset.pick; $('#file').click(); }));
 $('#file').addEventListener('change', (e) => { handle(e.target.files[0], pickTarget); e.target.value = ''; });
-$$('[data-sample]').forEach((b) => b.addEventListener('click', async () => handle(await sampleFile(b.dataset.sample), b.dataset.sample)));
 [...$$('[data-drop]'), $('[data-view=inicio]')].forEach((z) => {
   const t = z.dataset.drop || 'home';
   const mark = () => z.querySelector('.drop:not([hidden])') || z;
@@ -609,7 +582,6 @@ async function decodeB64() {
   } catch { b64Reset('O código está incompleto ou corrompido: o navegador não conseguiu montar a imagem.'); }
 }
 $('#b64-in').addEventListener('input', (e) => { $('#b64-count').textContent = `${num(e.target.value.length)} caracteres`; clearTimeout(b64Timer); if (e.inputType === 'insertFromPaste') decodeB64(); else b64Timer = setTimeout(decodeB64, 200); });
-$('#b64-sample').addEventListener('click', () => { $('#b64-in').value = state.hist[2].base64; $('#b64-in').dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste' })); });
 $('#b64-clear').addEventListener('click', () => { $('#b64-in').value = ''; $('#b64-count').textContent = '0 caracteres'; b64Reset(''); $('#b64-in').focus(); });
 $('#b64-dl').addEventListener('click', () => download(b64Url.url, 'imagem.' + ({ 'image/jpeg': 'jpg', 'image/webp': 'webp' }[b64Url.mime] || 'png')));
 
@@ -694,9 +666,6 @@ document.addEventListener('click', async (e) => {
 });
 $('#hist-clear').addEventListener('click', async () => { if (await ask('Limpar o histórico?', `${state.hist.length} conversões serão apagadas deste navegador. Favoritos não são afetados.`, 'Limpar histórico')) { state.hist = []; renderLists(); } });
 $('#fav-clear').addEventListener('click', async () => { if (await ask('Limpar os favoritos?', `${state.fav.length} favoritos serão apagados deste navegador.`, 'Limpar favoritos')) { state.fav = []; renderLists(); } });
-
-/* Exposto só para os testes automáticos do protótipo */
-window.__proto = { state, compress, convert };
 
 txtMeta(); counts(); route();
 }
