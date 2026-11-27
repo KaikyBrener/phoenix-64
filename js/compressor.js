@@ -93,14 +93,14 @@ class Compressor200KB {
 
             this.exibirResultado(arquivo, resultado);
 
-            Swal.close();
+            AlertHelper.close();
 
             AlertHelper.toast('Sucesso!', 'success', {
                 text: 'Imagem pronta para download'
             });
 
         } catch (erro) {
-            Swal.close();
+            AlertHelper.close();
 
             AlertHelper.error(
                 'Erro ao processar',

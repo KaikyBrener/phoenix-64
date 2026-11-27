@@ -136,8 +136,31 @@ class AlertHelper {
         color: '#fff'
     };
 
+    static fire(opcoes) {
+        if (typeof Swal !== 'undefined') return Swal.fire(opcoes);
+        return this.fallback(opcoes);
+    }
+
+    static close() {
+        if (typeof Swal !== 'undefined') Swal.close();
+    }
+
+    // Usado quando o SweetAlert2 não carregou (CDN bloqueado ou offline)
+    static fallback(opcoes) {
+        const msg = [opcoes.title, opcoes.text].filter(Boolean).join('\n');
+        if (opcoes.toast || opcoes.timer || opcoes.didOpen) {
+            console.warn(msg);
+            return Promise.resolve({ isConfirmed: false });
+        }
+        if (opcoes.showCancelButton) {
+            return Promise.resolve({ isConfirmed: window.confirm(msg) });
+        }
+        window.alert(msg);
+        return Promise.resolve({ isConfirmed: true });
+    }
+
     static success(title, text, options = {}) {
-        return Swal.fire({
+        return this.fire({
             title,
             text,
             icon: 'success',
@@ -148,7 +171,7 @@ class AlertHelper {
     }
 
     static error(title, text, options = {}) {
-        return Swal.fire({
+        return this.fire({
             title,
             text,
             icon: 'error',
@@ -158,7 +181,7 @@ class AlertHelper {
     }
 
     static warning(title, text, options = {}) {
-        return Swal.fire({
+        return this.fire({
             title,
             text,
             icon: 'warning',
@@ -168,7 +191,7 @@ class AlertHelper {
     }
 
     static info(title, text, options = {}) {
-        return Swal.fire({
+        return this.fire({
             title,
             text,
             icon: 'info',
@@ -178,7 +201,7 @@ class AlertHelper {
     }
 
     static confirm(title, text, options = {}) {
-        return Swal.fire({
+        return this.fire({
             title,
             text,
             icon: 'warning',
@@ -193,18 +216,18 @@ class AlertHelper {
     }
 
     static loading(title = 'Processando...', text = '') {
-        return Swal.fire({
+        return this.fire({
             title,
             text,
             icon: 'info',
             allowOutsideClick: false,
-            didOpen: () => Swal.showLoading(),
+            didOpen: () => { if (typeof Swal !== 'undefined') Swal.showLoading(); },
             ...this.theme
         });
     }
 
     static toast(title, icon = 'success', options = {}) {
-        return Swal.fire({
+        return this.fire({
             title,
             icon,
             timer: 2000,
