@@ -914,3 +914,8 @@ textarea.form-control {
 .app-main {
     padding-bottom: 5.5rem;
 }
+
+/* Cards de métricas com a mesma altura na linha */
+.metric-card {
+    height: 100%;
+}
