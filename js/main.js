@@ -160,7 +160,7 @@ class PhoenixApp {
             });
 
             // Fechar loading
-            Swal.close();
+            AlertHelper.close();
 
             // Mostrar sucesso
             AlertHelper.toast('Sucesso!', 'success', {
