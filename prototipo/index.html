@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12100E">
+<meta name="color-scheme" content="dark">
+<title>Phoenix V5 protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE  ferramenta de trabalho: precisa, calma, sem enfeite
+   IDEA   bancada de conversão: entrada à esquerda, saída à direita, e uma régua que mede o que a conversão fez
+   PICTURE a própria ferramenta aberta, com a régua de tamanho (entrada x saída, em escala real) como assinatura
+   COLOUR carvão quente #12100E, superfícies #1A1714/#24201C, tinta #F3EEE7, brasa #FF6B1A só para ação e seleção
+   TYPE   IBM Plex Sans para a interface, IBM Plex Mono só para o conteúdo Base64
+   LAYOUT laptop: barra lateral + bancada em duas colunas com régua embaixo; celular: entrada, régua, saída, barra inferior */
+:root{color-scheme:dark;
+  --bg:#12100E;--surface:#1A1714;--raised:#24201C;--sunken:#0D0C0A;
+  --line:#352F29;--line-2:#4A423A;--field:#746A60;
+  --ink:#F3EEE7;--ink-2:#B3A99D;--ink-3:#8F857A;
+  --ember:#FF6B1A;--ember-hover:#FF8338;--ember-ink:#FF9A5C;--on-ember:#1C0D03;--ember-tint:rgba(255,107,26,.12);
+  --ok:#5CC98A;--ok-tint:rgba(92,201,138,.12);--err:#F2617A;--err-tint:rgba(242,97,122,.12);
+  --focus:#FFB089;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+:root[data-theme=light],:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);overflow-x:clip;-webkit-tap-highlight-color:transparent}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+img{max-width:100%;display:block}
+a{color:var(--ember-ink)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.icon{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.icon.sm{width:16px;height:16px}
+
+/* Estrutura */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100%;background:linear-gradient(90deg,var(--surface) 247px,var(--line) 247px 248px,transparent 248px)}
+.side{position:sticky;top:0;height:100vh;height:100dvh;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:20px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 20px;text-decoration:none;color:var(--ink)}
+.brand svg{width:28px;height:28px}
+.brand b{font-weight:600;font-size:18px;letter-spacing:-.01em}
+.brand span{color:var(--ink-2);font-size:14px}
+.nav-group{margin-top:14px}
+.nav-group h2{font-size:13px;font-weight:500;color:var(--ink-2);margin:0 10px 6px}
+.nav a{display:flex;align-items:center;gap:10px;min-height:40px;padding:8px 10px;border-radius:var(--r-sm);color:var(--ink-2);text-decoration:none;font-size:15px}
+.nav a:hover{background:var(--raised);color:var(--ink)}
+.nav a[aria-current=page]{background:var(--ember-tint);color:var(--ink)}
+.nav a[aria-current=page] .icon{color:var(--ember)}
+.nav .count{margin-left:auto;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.side-foot{margin-top:auto;padding:12px 10px 0;border-top:1px solid var(--line);font-size:13px;color:var(--ink-2);display:flex;gap:8px;align-items:flex-start}
+.side-foot .icon{color:var(--ok);margin-top:1px}
+main{padding:32px clamp(16px,4vw,48px) 64px;max-width:1240px;width:100%}
+.topbar,.bottombar{display:none}
+
+/* Cabeçalho da ferramenta */
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px}
+.head h1{font-size:clamp(28px,3.2vw,36px);line-height:1.1;letter-spacing:-.02em;font-weight:600;margin:0 0 6px;text-wrap:balance}
+.head p{margin:0;color:var(--ink-2);max-width:62ch}
+.demo-note{font-size:13px;color:var(--ink-2);display:flex;gap:6px;align-items:center;margin:0 0 20px}
+.demo-note .icon{color:var(--ink-2)}
+
+/* Controles */
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--r-sm);border:1px solid var(--field);background:var(--raised);color:var(--ink);font-weight:500;font-size:15px;white-space:nowrap;transition:background-color .15s,border-color .15s,color .15s}
+.btn:hover{border-color:var(--ink-3);background:#2B2621}
+.btn.primary{background:var(--ember);border-color:var(--ember);color:var(--on-ember)}
+.btn.primary:hover{background:var(--ember-hover);border-color:var(--ember-hover)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--ink-2)}
+.btn.ghost:hover{color:var(--ink);background:var(--raised)}
+.btn.danger{background:transparent;border-color:var(--line-2);color:var(--err)}
+.btn.danger:hover{border-color:var(--err);background:var(--err-tint)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.icon-only{width:44px;padding:0}
+.btn .spin{display:none;width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite}
+.btn[aria-busy=true] .spin{display:inline-block}
+.btn[aria-busy=true] .icon{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--line);border-radius:calc(var(--r-sm) + 3px);background:var(--sunken)}
+.seg button{min-height:38px;padding:0 14px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--ink-2);font-size:15px;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--raised);color:var(--ink);box-shadow:0 0 0 1px var(--line-2)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.actions .push{margin-left:auto}
+
+/* Bancada */
+.bench{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);grid-template-areas:"in out" "ruler ruler";gap:16px}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);display:flex;flex-direction:column}
+.pane-in{grid-area:in}.pane-out{grid-area:out}
+.pane-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.pane-head h2{font-size:16px;font-weight:600;margin:0}
+.pane-head .meta{font-size:14px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pane-body{padding:16px;display:flex;flex-direction:column;gap:14px;flex:1}
+.drop{flex:1;min-height:260px;border:1.5px dashed var(--field);border-radius:var(--r-md);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:var(--sunken);transition:border-color .15s,background-color .15s}
+.drop.over{border-color:var(--ember);background:var(--ember-tint)}
+.drop>.icon{width:28px;height:28px;color:var(--ink-2)}
+.drop p{margin:0;color:var(--ink-2);font-size:15px}
+.drop .rules{font-size:13px}
+.drop .links{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.linkbtn{background:none;border:0;padding:6px 4px;color:var(--ember-ink);text-decoration:underline;text-underline-offset:3px;font-size:15px;min-height:44px}
+.viewer{flex:1;min-height:260px;border-radius:var(--r-md);overflow:hidden;display:grid;place-items:center;padding:12px;
+  background-color:#1E1B18;background-image:linear-gradient(45deg,#25211D 25%,transparent 25%,transparent 75%,#25211D 75%),linear-gradient(45deg,#25211D 25%,transparent 25%,transparent 75%,#25211D 75%);background-size:20px 20px;background-position:0 0,10px 10px}
+.viewer img{max-height:340px;width:auto;object-fit:contain;box-shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;margin:0}
+.facts div{padding:6px 0;border-top:1px solid var(--line)}
+.facts dt{font-size:13px;color:var(--ink-2)}
+.facts dd{margin:0;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.code{width:100%;flex:1;min-height:260px;resize:vertical;border:1px solid var(--field);border-radius:var(--r-md);background:var(--sunken);color:var(--ink);padding:12px 14px;font:13.5px/1.6 var(--mono);word-break:break-all;overflow-wrap:anywhere}
+.code::placeholder{color:var(--ink-3)}
+.code:focus{border-color:var(--ink-2)}
+.code[aria-invalid=true]{border-color:var(--err)}
+.fmt{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.status{min-height:22px;font-size:14px;color:var(--ink-2);display:flex;gap:6px;align-items:center}
+.status.ok{color:var(--ok)}
+.status.err{color:var(--err)}
+.field-err{display:flex;gap:8px;align-items:flex-start;color:var(--err);font-size:14px;margin:0}
+.field-err[hidden]{display:none}
+.hint{font-size:13px;color:var(--ink-2);margin:0}
+
+/* Régua de tamanho */
+.ruler{grid-area:ruler;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px 14px;align-items:center}
+.ruler h2{grid-column:1/-1;font-size:16px;font-weight:600;margin:0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ruler h2 span{font-weight:500;color:var(--ink-2);font-size:15px;font-variant-numeric:tabular-nums}
+.ruler h2 span.up{color:var(--ember-ink)}
+.ruler h2 span.down{color:var(--ok)}
+.ruler .lbl{font-size:14px;color:var(--ink-2);white-space:nowrap}
+.track{position:relative;height:14px;background:var(--sunken);border-radius:3px}
+.bar{position:absolute;inset:0 auto 0 0;border-radius:3px;transform-origin:left;transition:transform .32s cubic-bezier(.2,.7,.2,1)}
+.bar.in{background:#6E655B}
+.bar.out{background:var(--ember)}
+.bar.out.small{background:var(--ok)}
+.limit{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ink)}
+.limit span{position:absolute;top:calc(100% + 2px);left:50%;transform:translateX(-50%);font-size:13px;color:var(--ink);white-space:nowrap;padding-bottom:2px}
+.ruler .val{font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;min-width:6.5em}
+.ruler.empty .track{background:repeating-linear-gradient(90deg,var(--sunken) 0 8px,transparent 8px 12px)}
+.ruler-note{grid-column:1/-1;margin:0;font-size:14px;color:var(--ink-2)}
+.ruler.has-limit .track.last{margin-bottom:22px}
+.ruler h2 span.same{color:var(--ok)}
+
+/* Início */
+.home-drop{min-height:220px;margin-bottom:28px}
+.home-drop .drop{min-height:220px;flex-direction:row;gap:20px;justify-content:flex-start;text-align:left;padding:28px 32px}
+.home-drop .drop>.icon{width:40px;height:40px;color:var(--ember)}
+.home-drop .drop strong{display:block;font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.home-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:32px}
+.sec-title{font-size:18px;font-weight:600;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.sec-title a{font-size:14px;font-weight:500}
+.tools{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.tools a{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.tools a:hover{background:var(--surface)}
+.tools .ti{width:40px;height:40px;border-radius:var(--r-sm);background:var(--raised);display:grid;place-items:center;color:var(--ember-ink)}
+.tools b{font-weight:500;display:block}
+.tools small{color:var(--ink-2);font-size:14px}
+.tools .chev{color:var(--ink-3)}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 24px;border-top:1px solid var(--line)}
+.stats div{padding:12px 4px;border-bottom:1px solid var(--line)}
+.stats div:nth-child(odd){border-right:1px solid var(--line);padding-right:12px}
+.stats div:nth-child(even){padding-left:16px}
+.stats dt{font-size:14px;color:var(--ink-2)}
+.stats dd{margin:2px 0 0;font-size:28px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* Listas (histórico/favoritos) */
+.list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.item{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
+.item img{width:48px;height:48px;object-fit:cover;border-radius:var(--r-sm);background:var(--raised)}
+.item b{font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item small{color:var(--ink-2);font-size:14px}
+.item .actions{gap:4px;flex-wrap:nowrap}
+.list.compact .item{grid-template-columns:40px minmax(0,1fr) auto;padding:10px 4px}
+.list.compact img{width:40px;height:40px}
+.list.compact .size{font-size:14px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.empty{padding:40px 16px;text-align:center;border:1px dashed var(--line-2);border-radius:var(--r-lg);color:var(--ink-2)}
+.empty p{margin:0 0 14px}
+.list-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.list-head p{margin:0;color:var(--ink-2);font-size:14px}
+
+/* Texto */
+.text-bench{grid-template-areas:"in out" "act act"}
+.text-act{grid-area:act;display:flex;flex-wrap:wrap;gap:8px}
+
+/* Toast e diálogo */
+.toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:50;width:min(420px,calc(100vw - 32px));pointer-events:none}
+.toast{display:flex;gap:10px;align-items:flex-start;background:var(--raised);border:1px solid var(--line-2);border-radius:var(--r-md);padding:12px 14px;font-size:15px;box-shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45)}
+.toast .icon{color:var(--ok)}
+.toast.err .icon{color:var(--err)}
+dialog{border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--surface);color:var(--ink);padding:24px;width:min(440px,calc(100vw - 32px));box-shadow:0 1px 2px rgba(0,0,0,.4),0 24px 60px rgba(0,0,0,.55)}
+dialog::backdrop{background:rgba(6,5,4,.7)}
+dialog h2{margin:0 0 8px;font-size:20px;font-weight:600}
+dialog p{margin:0 0 20px;color:var(--ink-2)}
+dialog .actions{justify-content:flex-end}
+.sheet{margin:auto auto 0;width:100%;max-width:100%;border-radius:var(--r-lg) var(--r-lg) 0 0;padding:16px 12px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet h2{padding:0 10px}
+
+[hidden]{display:none!important}
+[data-view]{display:none}
+[data-view].on{display:block}
+
+/* Responsivo */
+@media (max-width:1080px){
+  .bench{grid-template-columns:minmax(0,1fr);grid-template-areas:"in" "out" "ruler"}
+  .text-bench{grid-template-areas:"in" "act" "out"}
+  .home-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);background:none}
+  .side{display:none}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:20;background:rgba(18,16,14,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px))}
+  .topbar .brand{padding:0}
+  .topbar .where{font-size:14px;color:var(--ink-2);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bottombar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
+  .bottombar a,.bottombar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;border:0;background:none;color:var(--ink-2);font-size:13px;text-decoration:none;border-radius:var(--r-sm)}
+  .bottombar [aria-current=page]{color:var(--ink)}
+  .bottombar [aria-current=page] .icon{color:var(--ember)}
+  main{padding:20px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+  .toasts{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  .home-drop .drop{flex-direction:column;text-align:center;justify-content:center;padding:24px}
+}
+@media (max-width:600px){
+  .head{margin-bottom:18px}
+  .drop,.viewer,.code{min-height:200px}
+  .ruler{grid-template-columns:auto minmax(0,1fr);}
+  .ruler .val{grid-column:2;text-align:left;margin-top:-6px}
+  .actions .push{margin-left:0}
+  .item .btn.icon-only{width:40px;min-height:40px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+  <symbol id="i-face" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18c.8-2.3 2.7-3.5 5-3.5s4.2 1.2 5 3.5"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
+  <symbol id="i-shrink" viewBox="0 0 24 24"><path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16v5h-5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="m3 21 6-6"/><path d="M3 8V3h5"/><path d="M9 9 3 3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 15h10l1-15"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13"/><path d="m13 4 4 4-4 4"/><path d="M20 16H7"/><path d="m11 12-4 4 4 4"/></symbol>
+  <symbol id="logo" viewBox="0 0 32 32"><path d="M16 3c1 5 6 7 6 13a6 6 0 0 1-12 0c0-3 1.5-4.5 3-6 0 2.5 1 4 3 4-1.5-4 0-8 0-11Z" fill="#FF6B1A" stroke="none"/><path d="M16 29a9 9 0 0 1-9-9" stroke="#FF9A5C" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M16 29a9 9 0 0 0 9-9" stroke="#FF9A5C" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="side" aria-label="Navegação">
+    <a class="brand" href="#inicio"><svg aria-hidden="true"><use href="#logo"/></svg><b>Phoenix</b><span>V5</span></a>
+    <nav class="nav" aria-label="Principal">
+      <a href="#inicio" data-nav="inicio"><svg class="icon"><use href="#i-home"/></svg>Início</a>
+      <div class="nav-group"><h2>Ferramentas</h2>
+        <a href="#imagem-base64" data-nav="imagem-base64"><svg class="icon"><use href="#i-image"/></svg>Imagem → Base64</a>
+        <a href="#biometria" data-nav="biometria"><svg class="icon"><use href="#i-face"/></svg>Biometria facial</a>
+        <a href="#base64-imagem" data-nav="base64-imagem"><svg class="icon"><use href="#i-code"/></svg>Base64 → Imagem</a>
+        <a href="#comprimir" data-nav="comprimir"><svg class="icon"><use href="#i-shrink"/></svg>Imagem → 200 KB</a>
+        <a href="#texto" data-nav="texto"><svg class="icon"><use href="#i-text"/></svg>Texto ↔ Base64</a>
+      </div>
+      <div class="nav-group"><h2>Seus dados</h2>
+        <a href="#historico" data-nav="historico"><svg class="icon"><use href="#i-clock"/></svg>Histórico<span class="count" data-count="hist"></span></a>
+        <a href="#favoritos" data-nav="favoritos"><svg class="icon"><use href="#i-star"/></svg>Favoritos<span class="count" data-count="fav"></span></a>
+      </div>
+    </nav>
+    <p class="side-foot"><svg class="icon sm"><use href="#i-lock"/></svg>Tudo é processado neste navegador. Nada é enviado para servidores.</p>
+  </aside>
+
+  <header class="topbar">
+    <a class="brand" href="#inicio"><svg aria-hidden="true"><use href="#logo"/></svg><b>Phoenix</b></a>
+    <span class="where" id="where">Início</span>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <p class="demo-note"><svg class="icon sm"><use href="#i-info"/></svg>Protótipo de design. Histórico, favoritos e números são fictícios e nada é salvo.</p>
+
+    <!-- INÍCIO -->
+    <section data-view="inicio" aria-labelledby="t-inicio">
+      <div class="head"><div><h1 id="t-inicio">O que você vai converter?</h1><p>Imagens, Base64 e texto, sem sair do navegador.</p></div></div>
+      <div class="home-drop" data-drop="home">
+        <div class="drop">
+          <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+          <div><strong>Solte uma imagem para gerar o Base64</strong>
+            <p>Ou cole com Ctrl+V. PNG, JPG ou WEBP de até 3 MB.</p>
+            <div class="links" style="justify-content:inherit;margin-top:10px">
+              <button class="btn primary" data-pick="home"><svg class="icon"><use href="#i-image"/></svg>Escolher imagem</button>
+              <button class="linkbtn" data-sample="home">Usar imagem de exemplo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="home-grid">
+        <div>
+          <h2 class="sec-title">Ferramentas</h2>
+          <ul class="tools">
+            <li><a href="#imagem-base64"><span class="ti"><svg class="icon"><use href="#i-image"/></svg></span><span><b>Imagem → Base64</b><small>Gera um data URL a partir de PNG, JPG ou WEBP</small></span><svg class="icon chev"><use href="#i-chev"/></svg></a></li>
+            <li><a href="#biometria"><span class="ti"><svg class="icon"><use href="#i-face"/></svg></span><span><b>Biometria facial</b><small>Foto em até 640 × 480, JPEG 80%, para cadastro facial</small></span><svg class="icon chev"><use href="#i-chev"/></svg></a></li>
+            <li><a href="#base64-imagem"><span class="ti"><svg class="icon"><use href="#i-code"/></svg></span><span><b>Base64 → Imagem</b><small>Mostra e baixa a imagem de um código Base64</small></span><svg class="icon chev"><use href="#i-chev"/></svg></a></li>
+            <li><a href="#comprimir"><span class="ti"><svg class="icon"><use href="#i-shrink"/></svg></span><span><b>Imagem → 200 KB</b><small>Reduz uma imagem até caber em 200 KB</small></span><svg class="icon chev"><use href="#i-chev"/></svg></a></li>
+            <li><a href="#texto"><span class="ti"><svg class="icon"><use href="#i-text"/></svg></span><span><b>Texto ↔ Base64</b><small>Codifica e decodifica texto em UTF-8</small></span><svg class="icon chev"><use href="#i-chev"/></svg></a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="sec-title">Atividade</h2>
+          <dl class="stats" id="stats"></dl>
+          <h2 class="sec-title">Recentes <a href="#historico">Ver histórico</a></h2>
+          <ul class="list compact" id="recent"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- IMAGEM → BASE64 / BIOMETRIA (mesma bancada) -->
+    <section data-view="imagem-base64" aria-labelledby="t-img">
+      <div class="head">
+        <div><h1 id="t-img">Imagem → Base64</h1><p id="img-desc">Converte a imagem sem alterá-la e entrega um data URL pronto para colar.</p></div>
+        <div class="seg" role="group" aria-label="Perfil de conversão">
+          <button type="button" data-mode="padrao" aria-pressed="true">Padrão</button>
+          <button type="button" data-mode="facial" aria-pressed="false">Biometria facial</button>
+        </div>
+      </div>
+      <div class="bench">
+        <section class="pane pane-in" aria-labelledby="in-t">
+          <div class="pane-head"><h2 id="in-t">Imagem</h2><span class="meta" id="in-meta"></span></div>
+          <div class="pane-body">
+            <div class="drop" data-drop="img" id="img-drop">
+              <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+              <p>Arraste uma imagem para cá ou cole com Ctrl+V</p>
+              <div class="links">
+                <button class="btn primary" data-pick="img"><svg class="icon"><use href="#i-image"/></svg>Escolher imagem</button>
+                <button class="linkbtn" data-sample="img">Usar imagem de exemplo</button>
+              </div>
+              <p class="rules" id="img-rules">PNG, JPG ou WEBP, até 3 MB</p>
+            </div>
+            <div class="viewer" id="img-viewer" hidden><img id="img-preview" alt=""></div>
+            <dl class="facts" id="img-facts" hidden></dl>
+            <div class="actions" id="img-in-actions" hidden>
+              <button class="btn" data-pick="img"><svg class="icon"><use href="#i-swap"/></svg>Trocar imagem</button>
+            </div>
+          </div>
+        </section>
+        <section class="pane pane-out" aria-labelledby="out-t">
+          <div class="pane-head"><h2 id="out-t">Base64</h2><span class="fmt" id="img-fmt" hidden></span></div>
+          <div class="pane-body">
+            <label class="sr" for="img-out">Código Base64 gerado</label>
+            <textarea id="img-out" class="code" readonly placeholder="O código aparece aqui depois que você escolher uma imagem…" spellcheck="false" translate="no"></textarea>
+            <div class="actions">
+              <button class="btn primary" id="img-copy" disabled><svg class="icon"><use href="#i-copy"/></svg>Copiar</button>
+              <button class="btn" id="img-txt" disabled><svg class="icon"><use href="#i-download"/></svg>Baixar .txt</button>
+              <button class="btn" id="img-fav" disabled aria-pressed="false"><svg class="icon"><use href="#i-star"/></svg>Favoritar</button>
+              <button class="btn ghost push" id="img-clear" disabled><svg class="icon"><use href="#i-trash"/></svg>Limpar</button>
+            </div>
+            <p class="status" id="img-status" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+        <section class="ruler empty" id="img-ruler" aria-labelledby="img-ruler-t"></section>
+      </div>
+    </section>
+
+    <!-- BASE64 → IMAGEM -->
+    <section data-view="base64-imagem" aria-labelledby="t-b64">
+      <div class="head"><div><h1 id="t-b64">Base64 → Imagem</h1><p>Cole um código Base64 ou um data URL para ver e baixar a imagem.</p></div></div>
+      <div class="bench">
+        <section class="pane pane-in" aria-labelledby="b64-in-t">
+          <div class="pane-head"><h2 id="b64-in-t">Código</h2><span class="meta" id="b64-count">0 caracteres</span></div>
+          <div class="pane-body">
+            <label class="sr" for="b64-in">Código Base64 de entrada</label>
+            <textarea id="b64-in" class="code" placeholder="data:image/png;base64,iVBORw0KGgo… ou só iVBORw0KGgo…" spellcheck="false" aria-describedby="b64-err" translate="no"></textarea>
+            <p class="field-err" id="b64-err" hidden><svg class="icon sm"><use href="#i-alert"/></svg><span></span></p>
+            <div class="actions">
+              <button class="btn primary" id="b64-go"><span class="spin" aria-hidden="true"></span><svg class="icon"><use href="#i-image"/></svg>Mostrar imagem</button>
+              <button class="linkbtn" id="b64-sample">Colar código de exemplo</button>
+              <button class="btn ghost push" id="b64-clear"><svg class="icon"><use href="#i-trash"/></svg>Limpar</button>
+            </div>
+          </div>
+        </section>
+        <section class="pane pane-out" aria-labelledby="b64-out-t">
+          <div class="pane-head"><h2 id="b64-out-t">Imagem</h2><span class="fmt" id="b64-fmt" hidden></span></div>
+          <div class="pane-body">
+            <div class="drop" id="b64-empty" style="border-style:solid"><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg><p>A imagem aparece aqui.</p></div>
+            <div class="viewer" id="b64-viewer" hidden><img id="b64-preview" alt="Imagem decodificada do Base64"></div>
+            <dl class="facts" id="b64-facts" hidden></dl>
+            <div class="actions"><button class="btn primary" id="b64-dl" disabled><svg class="icon"><use href="#i-download"/></svg>Baixar imagem</button></div>
+            <p class="status" id="b64-status" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- IMAGEM → 200 KB -->
+    <section data-view="comprimir" aria-labelledby="t-cmp">
+      <div class="head"><div><h1 id="t-cmp">Imagem → 200 KB</h1><p>Reduz qualidade e, se preciso, dimensões até a imagem caber em 200 KB.</p></div></div>
+      <div class="bench">
+        <section class="pane pane-in" aria-labelledby="cmp-in-t">
+          <div class="pane-head"><h2 id="cmp-in-t">Original</h2><span class="meta" id="cmp-in-meta"></span></div>
+          <div class="pane-body">
+            <div class="drop" data-drop="cmp" id="cmp-drop">
+              <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+              <p>Arraste uma imagem para cá</p>
+              <div class="links">
+                <button class="btn primary" data-pick="cmp"><svg class="icon"><use href="#i-image"/></svg>Escolher imagem</button>
+                <button class="linkbtn" data-sample="cmp">Usar imagem de exemplo</button>
+              </div>
+              <p class="rules">PNG, JPG ou WEBP</p>
+            </div>
+            <div class="viewer" id="cmp-viewer-in" hidden><img id="cmp-prev-in" alt="Imagem original"></div>
+            <div class="actions" id="cmp-in-actions" hidden><button class="btn" data-pick="cmp"><svg class="icon"><use href="#i-swap"/></svg>Trocar imagem</button></div>
+          </div>
+        </section>
+        <section class="pane pane-out" aria-labelledby="cmp-out-t">
+          <div class="pane-head"><h2 id="cmp-out-t">Comprimida</h2><span class="meta" id="cmp-out-meta"></span></div>
+          <div class="pane-body">
+            <div class="drop" id="cmp-empty" style="border-style:solid"><svg class="icon" aria-hidden="true"><use href="#i-shrink"/></svg><p>O resultado aparece aqui, ao lado do original.</p></div>
+            <div class="viewer" id="cmp-viewer-out" hidden><img id="cmp-prev-out" alt="Imagem comprimida"></div>
+            <div class="actions">
+              <button class="btn primary" id="cmp-dl" disabled><svg class="icon"><use href="#i-download"/></svg>Baixar imagem</button>
+              <button class="btn ghost push" id="cmp-clear" disabled><svg class="icon"><use href="#i-trash"/></svg>Limpar</button>
+            </div>
+            <p class="status" id="cmp-status" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+        <section class="ruler empty" id="cmp-ruler" aria-labelledby="cmp-ruler-t"></section>
+      </div>
+    </section>
+
+    <!-- TEXTO -->
+    <section data-view="texto" aria-labelledby="t-txt">
+      <div class="head"><div><h1 id="t-txt">Texto ↔ Base64</h1><p>Codifica e decodifica em UTF-8. Acentos e emojis são preservados.</p></div></div>
+      <div class="bench text-bench">
+        <section class="pane pane-in" aria-labelledby="txt-in-t">
+          <div class="pane-head"><h2 id="txt-in-t"><label for="txt-in">Texto</label></h2><span class="meta" id="txt-in-meta">0 caracteres</span></div>
+          <div class="pane-body"><textarea id="txt-in" class="code" style="font-family:var(--sans);font-size:16px;word-break:normal" placeholder="Digite ou cole um texto…"></textarea></div>
+        </section>
+        <div class="text-act">
+          <button class="btn primary" id="txt-enc"><svg class="icon"><use href="#i-chev"/></svg>Codificar</button>
+          <button class="btn" id="txt-dec"><svg class="icon" style="transform:scaleX(-1)"><use href="#i-chev"/></svg>Decodificar</button>
+          <button class="btn" id="txt-copy"><svg class="icon"><use href="#i-copy"/></svg>Copiar Base64</button>
+          <button class="btn ghost" id="txt-clear"><svg class="icon"><use href="#i-trash"/></svg>Limpar</button>
+          <p class="status" id="txt-status" role="status" aria-live="polite" style="margin:0 0 0 auto"></p>
+        </div>
+        <section class="pane pane-out" aria-labelledby="txt-out-t">
+          <div class="pane-head"><h2 id="txt-out-t"><label for="txt-out">Base64</label></h2><span class="meta" id="txt-out-meta">0 caracteres</span></div>
+          <div class="pane-body">
+            <textarea id="txt-out" class="code" placeholder="Cole um Base64 aqui para decodificar…" spellcheck="false" aria-describedby="txt-err" translate="no"></textarea>
+            <p class="field-err" id="txt-err" hidden><svg class="icon sm"><use href="#i-alert"/></svg><span></span></p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section data-view="historico" aria-labelledby="t-hist">
+      <div class="head"><div><h1 id="t-hist">Histórico</h1><p>As 20 conversões mais recentes de imagem para Base64 ficam neste navegador.</p></div>
+        <button class="btn danger" id="hist-clear"><svg class="icon"><use href="#i-trash"/></svg>Limpar histórico</button></div>
+      <div class="list-head"><p id="hist-count"></p></div>
+      <ul class="list" id="hist-list"></ul>
+    </section>
+
+    <!-- FAVORITOS -->
+    <section data-view="favoritos" aria-labelledby="t-fav">
+      <div class="head"><div><h1 id="t-fav">Favoritos</h1><p>Códigos que você marcou para reutilizar.</p></div>
+        <button class="btn danger" id="fav-clear"><svg class="icon"><use href="#i-trash"/></svg>Limpar favoritos</button></div>
+      <div class="list-head"><p id="fav-count"></p></div>
+      <ul class="list" id="fav-list"></ul>
+    </section>
+  </main>
+
+  <nav class="bottombar" aria-label="Navegação">
+    <a href="#inicio" data-nav="inicio"><svg class="icon"><use href="#i-home"/></svg>Início</a>
+    <button type="button" id="tools-btn" data-nav="tools" aria-haspopup="dialog"><svg class="icon"><use href="#i-grid"/></svg>Ferramentas</button>
+    <a href="#historico" data-nav="historico"><svg class="icon"><use href="#i-clock"/></svg>Histórico</a>
+    <a href="#favoritos" data-nav="favoritos"><svg class="icon"><use href="#i-star"/></svg>Favoritos</a>
+  </nav>
+</div>
+
+<input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+<div class="toasts" aria-live="polite" id="toasts"></div>
+
+<dialog id="confirm" aria-labelledby="c-t" aria-describedby="c-d">
+  <h2 id="c-t"></h2><p id="c-d"></p>
+  <div class="actions"><button class="btn" value="cancel" id="c-no">Cancelar</button><button class="btn danger" id="c-yes"></button></div>
+</dialog>
+<dialog id="sheet" class="sheet" aria-labelledby="s-t">
+  <h2 id="s-t" class="sec-title">Ferramentas <button type="button" class="btn ghost" id="sheet-close">Fechar</button></h2>
+  <nav class="nav" aria-label="Ferramentas">
+    <a href="#imagem-base64" data-nav="imagem-base64"><svg class="icon"><use href="#i-image"/></svg>Imagem → Base64</a>
+    <a href="#biometria" data-nav="biometria"><svg class="icon"><use href="#i-face"/></svg>Biometria facial</a>
+    <a href="#base64-imagem" data-nav="base64-imagem"><svg class="icon"><use href="#i-code"/></svg>Base64 → Imagem</a>
+    <a href="#comprimir" data-nav="comprimir"><svg class="icon"><use href="#i-shrink"/></svg>Imagem → 200 KB</a>
+    <a href="#texto" data-nav="texto"><svg class="icon"><use href="#i-text"/></svg>Texto ↔ Base64</a>
+  </nav>
+</dialog>
+
+<script>
+{
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const LIMIT_IN = 3 * 1024 * 1024, LIMIT_CMP = 200 * 1024, HIST_MAX = 20;
+const FACIAL = { w: 640, h: 480, q: 0.8, type: 'image/jpeg' };
+const TITLES = { inicio: 'Início', 'imagem-base64': 'Imagem → Base64', biometria: 'Biometria facial', 'base64-imagem': 'Base64 → Imagem', comprimir: 'Imagem → 200 KB', texto: 'Texto ↔ Base64', historico: 'Histórico', favoritos: 'Favoritos' };
+
+const kb = (b) => b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} KB` : `${(b / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} MB`;
+const num = (n) => n.toLocaleString('pt-BR');
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const b64Bytes = (b64) => { const s = b64.replace(/^data:[^,]*,/, '').replace(/\s/g, ''); return Math.floor(s.length * 3 / 4) - (s.endsWith('==') ? 2 : s.endsWith('=') ? 1 : 0); };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const inFrame = (() => { try { return window.self !== window.top; } catch { return true; } })();
+
+/* ---------- Dados fictícios ---------- */
+function swatch(h1, h2, shape) {
+  const c = document.createElement('canvas'); c.width = c.height = 96; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 96, 96); g.addColorStop(0, h1); g.addColorStop(1, h2); x.fillStyle = g; x.fillRect(0, 0, 96, 96);
+  x.fillStyle = 'rgba(255,255,255,.85)';
+  if (shape === 'face') { x.beginPath(); x.arc(48, 38, 16, 0, 7); x.fill(); x.beginPath(); x.ellipse(48, 92, 32, 26, 0, 0, 7); x.fill(); }
+  else if (shape === 'logo') { x.beginPath(); x.moveTo(48, 18); x.lineTo(76, 74); x.lineTo(20, 74); x.closePath(); x.fill(); }
+  else { x.beginPath(); x.arc(70, 28, 10, 0, 7); x.fill(); x.fillStyle = 'rgba(0,0,0,.35)'; x.beginPath(); x.moveTo(0, 96); x.lineTo(34, 52); x.lineTo(60, 78); x.lineTo(96, 46); x.lineTo(96, 96); x.fill(); }
+  return c.toDataURL('image/png');
+}
+const now = Date.now();
+const seed = [
+  ['fachada-bloco-b.jpg', 'image/jpeg', 412300, '#3B5A7A', '#C98A4B', 'scene', 26],
+  ['cadastro_morador_facial.jpg', 'image/jpeg', 38900, '#5B4A3F', '#A88B74', 'face', 95],
+  ['logo-condominio.png', 'image/png', 18450, '#1E6E5C', '#2DA383', 'logo', 180],
+  ['planta-garagem.webp', 'image/webp', 233800, '#4A4F63', '#8F94A8', 'scene', 600],
+  ['cadastro_portaria_facial.jpg', 'image/jpeg', 41200, '#6A4B3B', '#B98F72', 'face', 1500],
+  ['banner-aviso.png', 'image/png', 96100, '#7A2E2E', '#D2694B', 'logo', 3100],
+];
+const state = {
+  stats: { hoje: 4, total: 37, tentativas: 39, sucesso: 37 },
+  hist: seed.map(([nome, tipo, bytes, a, b, sh, min], i) => { const p = swatch(a, b, sh); return { id: 'h' + i, nome, tipo, bytes, preview: p, base64: p, data: now - min * 60000 }; }),
+  fav: [],
+  img: null, mode: 'padrao', b64: null, cmp: null,
+};
+state.fav = [state.hist[1], state.hist[2]].map((h) => ({ ...h, id: 'f' + h.id }));
+
+/* ---------- Utilidades de interface ---------- */
+function toast(msg, kind = 'ok') {
+  const t = document.createElement('div'); t.className = 'toast' + (kind === 'err' ? ' err' : '');
+  t.innerHTML = `<svg class="icon sm" aria-hidden="true"><use href="#${kind === 'err' ? 'i-alert' : 'i-check'}"/></svg><span></span>`;
+  t.querySelector('span').textContent = msg; $('#toasts').append(t); setTimeout(() => t.remove(), 3200);
+}
+function status(el, msg, kind) { el.className = 'status' + (kind ? ' ' + kind : ''); el.innerHTML = msg ? `<svg class="icon sm" aria-hidden="true"><use href="#${kind === 'err' ? 'i-alert' : 'i-check'}"/></svg><span></span>` : ''; if (msg) el.querySelector('span').textContent = msg; }
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {
+    const a = document.createElement('textarea'); a.value = text; a.setAttribute('readonly', ''); a.style.cssText = 'position:fixed;left:-9999px'; document.body.append(a); a.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch {} a.remove(); return ok;
+  }
+}
+function download(href, name) {
+  if (inFrame) { toast('Download desativado nesta pré-visualização. No app o arquivo é salvo como ' + name + '.', 'err'); return; }
+  const a = document.createElement('a'); a.href = href; a.download = name; document.body.append(a); a.click(); a.remove();
+}
+function ask(title, desc, yes) {
+  return new Promise((res) => {
+    const d = $('#confirm'); $('#c-t').textContent = title; $('#c-d').textContent = desc; $('#c-yes').textContent = yes;
+    const done = (v) => { d.close(); $('#c-yes').onclick = $('#c-no').onclick = null; res(v); };
+    $('#c-yes').onclick = () => done(true); $('#c-no').onclick = () => done(false); d.oncancel = () => res(false);
+    d.showModal(); $('#c-no').focus();
+  });
+}
+function busy(btn, on, label) { btn.setAttribute('aria-busy', on); btn.disabled = on; if (label) btn.lastChild.textContent = label; }
+const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); if (m < 1) return 'agora'; if (m < 60) return `há ${m} min`; const h = Math.round(m / 60); if (h < 24) return `há ${h} h`; return new Date(t).toLocaleDateString('pt-BR'); };
+
+/* ---------- Imagens de exemplo ---------- */
+function sampleFile(kind) {
+  const portrait = kind === 'face', heavy = kind === 'heavy';
+  const c = document.createElement('canvas'); c.width = portrait ? 900 : heavy ? 2400 : 1200; c.height = portrait ? 1125 : heavy ? 1600 : 800; const x = c.getContext('2d');
+  const W = c.width, H = c.height;
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, portrait ? '#C9D3DB' : '#28415C'); g.addColorStop(1, portrait ? '#8C9AA6' : '#E39A5B'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  let s = 7; const rnd = () => (s = s * 16807 % 2147483647) / 2147483647;
+  for (let i = 0; i < (heavy ? 160000 : 2500); i++) { x.fillStyle = `rgba(${rnd() > .5 ? 255 : 0},${rnd() > .5 ? 255 : 0},${rnd() > .5 ? 255 : 0},.05)`; x.fillRect(rnd() * W, rnd() * H, heavy ? 2 : 3, heavy ? 2 : 3); }
+  if (portrait) {
+    x.fillStyle = '#5D4636'; x.beginPath(); x.ellipse(W / 2, H * .43, W * .2, H * .2, 0, 0, 7); x.fill();
+    x.fillStyle = '#C89A78'; x.beginPath(); x.ellipse(W / 2, H * .45, W * .16, H * .17, 0, 0, 7); x.fill();
+    x.fillStyle = '#2F3C4A'; x.beginPath(); x.ellipse(W / 2, H * 1.02, W * .42, H * .34, 0, 0, 7); x.fill();
+  } else {
+    x.fillStyle = '#FFD7A8'; x.beginPath(); x.arc(W * .72, H * .38, 90, 0, 7); x.fill();
+    [['#1C2A3A', .62], ['#141E29', .74]].forEach(([c2, y], k) => { x.fillStyle = c2; x.beginPath(); x.moveTo(0, H); for (let i = 0; i <= 12; i++) x.lineTo(W * i / 12, H * y - rnd() * 140 - k * 30); x.lineTo(W, H); x.fill(); });
+  }
+  return new Promise((r) => c.toBlob((b) => r(new File([b], portrait ? 'retrato-exemplo.png' : heavy ? 'foto-grande-exemplo.png' : 'paisagem-exemplo.png', { type: 'image/png' })), 'image/png'));
+}
+
+/* ---------- Leitura de imagem ---------- */
+const readURL = (f) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(f); });
+const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('imagem inválida')); i.src = src; });
+const toBlob = (c, type, q) => new Promise((r) => c.toBlob(r, type, q));
+
+/* ---------- Roteamento ---------- */
+let pickTarget = 'img';
+function route() {
+  let v = location.hash.slice(1) || 'inicio';
+  if (!TITLES[v]) v = 'inicio';
+  const view = v === 'biometria' ? 'imagem-base64' : v;
+  if (v === 'biometria' || v === 'imagem-base64') {
+    const m = v === 'biometria' ? 'facial' : 'padrao';
+    if (m !== state.mode) { setMode(m, false); const f = state.img?.file || state.pendingFile; if (f) convertImage(f); } else setMode(m, false);
+  }
+  $$('[data-view]').forEach((s) => s.classList.toggle('on', s.dataset.view === view));
+  $$('[data-nav]').forEach((a) => { if (a.dataset.nav === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  const isTool = ['imagem-base64', 'biometria', 'base64-imagem', 'comprimir', 'texto'].includes(v);
+  if (isTool) $('#tools-btn').setAttribute('aria-current', 'page');
+  $('#where').textContent = TITLES[v];
+  document.title = `${TITLES[v]} · Phoenix`;
+  if ($('#sheet').open) $('#sheet').close();
+  if (view === 'inicio') renderHome();
+  if (view === 'historico' || view === 'favoritos') renderLists();
+  $('#main').focus({ preventScroll: true }); window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+$('#tools-btn').addEventListener('click', () => $('#sheet').showModal());
+$('#sheet').addEventListener('click', (e) => { if (e.target === $('#sheet')) $('#sheet').close(); });
+$('#sheet-close').addEventListener('click', () => $('#sheet').close());
+
+/* ---------- Início ---------- */
+function renderHome() {
+  const s = state.stats, taxa = s.tentativas ? Math.round(s.sucesso / s.tentativas * 100) : null;
+  $('#stats').innerHTML = [['Conversões hoje', num(s.hoje)], ['Imagens processadas', num(s.total)], ['Favoritos', num(state.fav.length)], ['Taxa de sucesso', taxa === null ? '–' : taxa + '%']]
+    .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  const r = state.hist.slice(0, 3);
+  $('#recent').innerHTML = r.length ? r.map((h) => `<li class="item"><img src="${h.preview}" alt=""><span><b>${esc(h.nome)}</b><small>${ago(h.data)}</small></span><span class="size">${kb(h.bytes)}</span></li>`).join('')
+    : `<li class="empty"><p>Nenhuma conversão ainda.</p></li>`;
+  counts();
+}
+function counts() { $$('[data-count=hist]').forEach((e) => e.textContent = state.hist.length || ''); $$('[data-count=fav]').forEach((e) => e.textContent = state.fav.length || ''); }
+
+/* ---------- Imagem → Base64 / Biometria ---------- */
+function setMode(m, reprocess = true) {
+  state.mode = m;
+  $$('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === m));
+  const f = m === 'facial';
+  $('#t-img').textContent = f ? 'Biometria facial' : 'Imagem → Base64';
+  $('#img-desc').textContent = f ? 'Prepara a foto para cadastro facial: até 640 × 480, JPEG 80%, fundo branco. Entrega só o código Base64.' : 'Converte a imagem sem alterá-la e entrega um data URL pronto para colar.';
+  $('#img-rules').textContent = f ? 'Foto de rosto em PNG, JPG ou WEBP, até 3 MB' : 'PNG, JPG ou WEBP, até 3 MB';
+  const want = f ? '#biometria' : '#imagem-base64';
+  if (reprocess && location.hash !== want) history.replaceState(null, '', want), route();
+  const pf = state.img?.file || state.pendingFile;
+  if (reprocess && pf) convertImage(pf);
+}
+$$('[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+let convTok = 0;
+async function convertImage(file) {
+  const out = $('#img-out'), st = $('#img-status'), mode = state.mode, tok = ++convTok;
+  state.pendingFile = file;
+  state.stats.tentativas++;
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { status(st, `Formato não suportado (${file.type || 'desconhecido'}). Use PNG, JPG ou WEBP.`, 'err'); renderHome(); return; }
+  if (file.size > LIMIT_IN) { status(st, `A imagem tem ${kb(file.size)}. O limite é 3 MB; use Imagem → 200 KB antes.`, 'err'); return; }
+  status(st, 'Convertendo…'); out.value = ''; out.setAttribute('aria-busy', 'true');
+  const t0 = performance.now();
+  const src = await readURL(file); const img = await loadImg(src);
+  if (tok !== convTok) return;
+  let result, preview, w = img.naturalWidth, h = img.naturalHeight, outBytes;
+  if (mode === 'facial') {
+    const r = Math.min(FACIAL.w / w, FACIAL.h / h, 1); const c = document.createElement('canvas'); c.width = Math.round(w * r); c.height = Math.round(h * r);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    preview = c.toDataURL(FACIAL.type, FACIAL.q); result = preview.slice(preview.indexOf(',') + 1); outBytes = b64Bytes(preview); w = c.width; h = c.height;
+  } else { preview = src; result = src; outBytes = file.size; }
+  const wait = 450 - (performance.now() - t0); if (wait > 0) await sleep(wait);
+  if (tok !== convTok) return;
+  state.img = { file, w0: img.naturalWidth, h0: img.naturalHeight, w, h, preview, result, outBytes };
+  $('#img-drop').hidden = true; $('#img-viewer').hidden = false; $('#img-facts').hidden = false; $('#img-in-actions').hidden = false;
+  $('#img-preview').src = preview; $('#img-preview').alt = mode === 'facial' ? `Foto ajustada para cadastro facial, ${w} × ${h}` : `Pré-visualização de ${file.name}`;
+  $('#in-meta').textContent = file.name;
+  const facts = mode === 'facial'
+    ? [['Original', `${img.naturalWidth} × ${img.naturalHeight}`], ['Final', `${w} × ${h}`], ['Formato', 'JPEG 80%'], ['Peso final', kb(outBytes)]]
+    : [['Dimensões', `${w} × ${h}`], ['Formato', file.type.split('/')[1].toUpperCase()], ['Peso', kb(file.size)], ['Proporção', ratio(w, h)]];
+  $('#img-facts').innerHTML = facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  out.value = result; out.removeAttribute('aria-busy');
+  const fmt = $('#img-fmt'); fmt.hidden = false; fmt.textContent = mode === 'facial' ? 'Base64 puro' : 'Data URL';
+  $$('#img-copy,#img-txt,#img-fav,#img-clear').forEach((b) => b.disabled = false);
+  $('#img-fav').setAttribute('aria-pressed', 'false'); $('#img-fav').lastChild.textContent = 'Favoritar';
+  ruler($('#img-ruler'), { inLabel: 'Imagem', inBytes: file.size, outLabel: mode === 'facial' ? 'Base64 (após ajuste)' : 'Base64', outBytes: result.length, note: mode === 'facial' ? 'O texto Base64 ocupa cerca de 4/3 do arquivo JPEG gerado.' : 'Base64 sempre ocupa cerca de 33% a mais que o arquivo, porque usa 4 caracteres para cada 3 bytes.' });
+  state.stats.hoje++; state.stats.total++; state.stats.sucesso++;
+  state.hist.unshift({ id: 'h' + Date.now(), nome: mode === 'facial' ? file.name.replace(/\.[^.]+$/, '') + '_facial.jpg' : file.name, tipo: mode === 'facial' ? 'image/jpeg' : file.type, bytes: mode === 'facial' ? outBytes : file.size, preview, base64: result, data: Date.now() });
+  state.hist = state.hist.slice(0, HIST_MAX); counts();
+  const ok = await copy(result);
+  status(st, ok ? `Pronto. ${num(result.length)} caracteres copiados automaticamente.` : 'Pronto. Use Copiar para levar o código.', 'ok');
+}
+const ratio = (w, h) => { const g = (a, b) => b ? g(b, a % b) : a; const d = g(w, h); const a = w / d, b = h / d; return a > 50 ? (w / h).toFixed(2) + ':1' : `${a}:${b}`; };
+
+function ruler(el, o) {
+  const max = Math.max(o.inBytes, o.outBytes, o.limit || 0) * 1.04;
+  const diff = (o.outBytes - o.inBytes) / o.inBytes * 100;
+  const cls = diff === 0 ? 'same' : diff > 0 ? 'up' : 'down';
+  const sign = diff >= 0 ? '+' : '−';
+  const id = el.id + '-t';
+  el.className = 'ruler' + (o.limit ? ' has-limit' : '');
+  const lim = o.limit ? `<span class="limit" style="left:${o.limit / max * 100}%"></span>` : '';
+  const limLab = o.limit ? `<span class="limit" style="left:${o.limit / max * 100}%"><span>${o.limitLabel}</span></span>` : '';
+  el.innerHTML = `<h2 id="${id}">Tamanho <span class="${cls}">${o.headline || `${sign}${Math.abs(diff).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%`}</span></h2>
+    <span class="lbl">${o.inLabel}</span><div class="track"><div class="bar in" style="transform:scaleX(0);width:${o.inBytes / max * 100}%"></div>${lim}</div><span class="val">${kb(o.inBytes)}</span>
+    <span class="lbl">${o.outLabel}</span><div class="track last"><div class="bar out ${diff < 0 ? 'small' : ''}" style="transform:scaleX(0);width:${o.outBytes / max * 100}%"></div>${limLab}</div><span class="val">${kb(o.outBytes)}</span>
+    ${o.note ? `<p class="ruler-note">${o.note}</p>` : ''}`;
+  requestAnimationFrame(() => requestAnimationFrame(() => $$('.bar', el).forEach((b) => b.style.transform = 'scaleX(1)')));
+}
+function rulerEmpty(el, text) {
+  el.className = 'ruler empty';
+  el.innerHTML = `<h2 id="${el.id}-t">Tamanho</h2><span class="lbl">Entrada</span><div class="track"></div><span class="val">–</span><span class="lbl">Saída</span><div class="track"></div><span class="val">–</span><p class="ruler-note">${text}</p>`;
+}
+function clearImage() {
+  convTok++; state.img = null; state.pendingFile = null; $('#img-drop').hidden = false; $('#img-viewer').hidden = true; $('#img-facts').hidden = true; $('#img-in-actions').hidden = true; $('#in-meta').textContent = '';
+  $('#img-out').value = ''; $('#img-fmt').hidden = true; $$('#img-copy,#img-txt,#img-fav,#img-clear').forEach((b) => b.disabled = true); status($('#img-status'), '');
+  rulerEmpty($('#img-ruler'), 'Escolha uma imagem para comparar o tamanho do arquivo com o do código.');
+}
+$('#img-copy').addEventListener('click', async () => { const ok = await copy($('#img-out').value); status($('#img-status'), ok ? 'Copiado para a área de transferência.' : 'Não foi possível copiar. Selecione o código e use Ctrl+C.', ok ? 'ok' : 'err'); });
+$('#img-txt').addEventListener('click', () => download('data:text/plain;charset=utf-8,' + encodeURIComponent($('#img-out').value), (state.img?.file.name || 'imagem').replace(/\.[^.]+$/, '') + '_base64.txt'));
+$('#img-fav').addEventListener('click', (e) => {
+  const b = e.currentTarget; if (b.getAttribute('aria-pressed') === 'true') return;
+  const h = state.hist[0]; state.fav.unshift({ ...h, id: 'f' + Date.now() }); b.setAttribute('aria-pressed', 'true'); b.lastChild.textContent = 'Nos favoritos'; counts(); toast('Adicionado aos favoritos.');
+});
+$('#img-clear').addEventListener('click', clearImage);
+
+/* ---------- Escolha, arrasto e colagem ---------- */
+async function handleFile(file, target) {
+  if (!file) return;
+  if (target === 'home') { if (location.hash !== '#imagem-base64') location.hash = 'imagem-base64'; target = 'img'; await sleep(0); }
+  if (target === 'cmp') compress(file); else convertImage(file);
+}
+$$('[data-pick]').forEach((b) => b.addEventListener('click', () => { pickTarget = b.dataset.pick; $('#file').click(); }));
+$('#file').addEventListener('change', (e) => { handleFile(e.target.files[0], pickTarget); e.target.value = ''; });
+$$('[data-sample]').forEach((b) => b.addEventListener('click', async () => { const t = b.dataset.sample; handleFile(await sampleFile(t === 'cmp' ? 'heavy' : state.mode === 'facial' && t === 'img' ? 'face' : 'scene'), t); }));
+$$('[data-drop]').forEach((z) => {
+  const box = z.classList.contains('drop') ? z : $('.drop', z);
+  z.addEventListener('dragover', (e) => { e.preventDefault(); box.classList.add('over'); });
+  z.addEventListener('dragleave', () => box.classList.remove('over'));
+  z.addEventListener('drop', (e) => { e.preventDefault(); box.classList.remove('over'); handleFile(e.dataTransfer.files[0], z.dataset.drop); });
+});
+window.addEventListener('paste', (e) => {
+  const v = (location.hash.slice(1) || 'inicio'); const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith('image/'));
+  if (!f) return;
+  if (['inicio', 'imagem-base64', 'biometria'].includes(v)) { e.preventDefault(); handleFile(f, v === 'inicio' ? 'home' : 'img'); }
+  else if (v === 'comprimir') { e.preventDefault(); handleFile(f, 'cmp'); }
+});
+
+/* ---------- Base64 → Imagem ---------- */
+const MAGIC = [['iVBORw0KGgo', 'image/png'], ['/9j/', 'image/jpeg'], ['UklGR', 'image/webp'], ['R0lGOD', 'image/gif']];
+function b64Error(msg) { const e = $('#b64-err'); e.hidden = !msg; $('#b64-in').setAttribute('aria-invalid', !!msg); if (msg) e.querySelector('span').textContent = msg; }
+$('#b64-in').addEventListener('input', (e) => { $('#b64-count').textContent = `${num(e.target.value.length)} caracteres`; b64Error(''); });
+$('#b64-go').addEventListener('click', async () => {
+  const raw = $('#b64-in').value.trim(), btn = $('#b64-go');
+  if (!raw) { b64Error('Cole um código Base64 ou um data URL para continuar.'); $('#b64-in').focus(); return; }
+  const m = raw.match(/^data:(image\/[a-z+.-]+);base64,/i); let body = raw.replace(/^data:[^,]*,/, '').replace(/\s/g, '');
+  const bad = body.search(/[^A-Za-z0-9+/=]/);
+  if (bad >= 0) { b64Error(`Caractere inválido “${body[bad]}” na posição ${num(bad + 1)}. Base64 só usa letras, números, + / e =.`); return; }
+  const mime = m ? m[1] : (MAGIC.find(([p]) => body.startsWith(p)) || [])[1];
+  if (!mime) { b64Error('O código é Base64, mas não parece ser PNG, JPEG ou WEBP.'); return; }
+  busy(btn, true); await sleep(350);
+  try {
+    const url = `data:${mime};base64,${body}`; const img = await loadImg(url);
+    state.b64 = { url, mime };
+    $('#b64-empty').hidden = true; $('#b64-viewer').hidden = false; $('#b64-facts').hidden = false; $('#b64-preview').src = url;
+    $('#b64-fmt').hidden = false; $('#b64-fmt').textContent = mime.split('/')[1].toUpperCase();
+    $('#b64-facts').innerHTML = [['Dimensões', `${img.naturalWidth} × ${img.naturalHeight}`], ['Formato', m ? 'Do data URL' : 'Detectado no código'], ['Peso', kb(b64Bytes(body))]].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+    $('#b64-dl').disabled = false; status($('#b64-status'), 'Imagem decodificada.', 'ok');
+  } catch { b64Error('O código está incompleto ou corrompido: o navegador não conseguiu montar a imagem.'); }
+  busy(btn, false);
+});
+$('#b64-sample').addEventListener('click', () => { $('#b64-in').value = state.hist[2].base64; $('#b64-in').dispatchEvent(new Event('input')); $('#b64-go').click(); });
+$('#b64-clear').addEventListener('click', () => { $('#b64-in').value = ''; $('#b64-count').textContent = '0 caracteres'; b64Error(''); $('#b64-empty').hidden = false; $('#b64-viewer').hidden = true; $('#b64-facts').hidden = true; $('#b64-fmt').hidden = true; $('#b64-dl').disabled = true; status($('#b64-status'), ''); state.b64 = null; });
+$('#b64-dl').addEventListener('click', () => { const ext = { 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[state.b64.mime] || 'png'; download(state.b64.url, 'imagem.' + ext); });
+
+/* ---------- Imagem → 200 KB (simplificado) ---------- */
+async function compress(file) {
+  const st = $('#cmp-status');
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { status(st, 'Formato não suportado. Use PNG, JPG ou WEBP.', 'err'); return; }
+  const src = await readURL(file); const img = await loadImg(src);
+  $('#cmp-drop').hidden = true; $('#cmp-viewer-in').hidden = false; $('#cmp-in-actions').hidden = false; $('#cmp-prev-in').src = src;
+  $('#cmp-in-meta').textContent = `${img.naturalWidth} × ${img.naturalHeight} · ${kb(file.size)}`;
+  status(st, 'Comprimindo…'); $('#cmp-dl').disabled = true;
+  const type = file.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+  let blob, scale = 1, q = 0.92, w = img.naturalWidth, h = img.naturalHeight;
+  if (file.size <= LIMIT_CMP) blob = file;
+  else {
+    for (let i = 0; i < 14; i++) {
+      const c = document.createElement('canvas'); c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+      const x = c.getContext('2d'); if (type === 'image/jpeg') { x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); } x.drawImage(img, 0, 0, c.width, c.height);
+      blob = await toBlob(c, type, q);
+      if (blob.size <= LIMIT_CMP) { w = c.width; h = c.height; break; }
+      if (q > 0.72) q -= 0.08; else scale *= 0.85;
+    }
+  }
+  await sleep(300);
+  const url = URL.createObjectURL(blob); state.cmp = { url, name: file.name.replace(/\.[^.]+$/, '') + '_200kb.' + (blob.type === 'image/webp' ? 'webp' : blob.type === 'image/png' ? 'png' : 'jpg') };
+  $('#cmp-empty').hidden = true; $('#cmp-viewer-out').hidden = false; $('#cmp-prev-out').src = url;
+  $('#cmp-out-meta').textContent = blob === file ? 'sem alteração' : `${w} × ${h} · qualidade ${Math.round(q * 100)}%`;
+  $('#cmp-dl').disabled = false; $('#cmp-clear').disabled = false;
+  const red = Math.round((1 - blob.size / file.size) * 100);
+  ruler($('#cmp-ruler'), { inLabel: 'Original', inBytes: file.size, outLabel: 'Comprimida', outBytes: blob.size, limit: LIMIT_CMP, limitLabel: 'Limite 200 KB', headline: blob === file ? 'Já cabe em 200 KB' : `−${red}%`, note: blob === file ? 'A imagem já estava abaixo do limite e não foi alterada.' : `Ficou ${kb(blob.size)}, abaixo do limite de 200 KB.` });
+  status(st, blob === file ? 'A imagem já cabia em 200 KB.' : `Pronto: ${red}% menor.`, 'ok');
+}
+$('#cmp-dl').addEventListener('click', () => download(state.cmp.url, state.cmp.name));
+$('#cmp-clear').addEventListener('click', () => { $('#cmp-drop').hidden = false; $('#cmp-viewer-in').hidden = true; $('#cmp-in-actions').hidden = true; $('#cmp-empty').hidden = false; $('#cmp-viewer-out').hidden = true; $('#cmp-in-meta').textContent = $('#cmp-out-meta').textContent = ''; $('#cmp-dl').disabled = $('#cmp-clear').disabled = true; status($('#cmp-status'), ''); rulerEmpty($('#cmp-ruler'), 'Escolha uma imagem para ver o tamanho antes e depois, com a marca de 200 KB.'); });
+
+/* ---------- Texto ---------- */
+const enc = (t) => { const b = new TextEncoder().encode(t); let s = ''; b.forEach((x) => s += String.fromCharCode(x)); return btoa(s); };
+const dec = (t) => new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(atob(t.replace(/\s/g, '')), (c) => c.charCodeAt(0)));
+function txtMeta() { const t = $('#txt-in').value, o = $('#txt-out').value; $('#txt-in-meta').textContent = `${num([...t].length)} caracteres · ${num(new TextEncoder().encode(t).length)} bytes`; $('#txt-out-meta').textContent = `${num(o.length)} caracteres`; }
+function txtErr(m) { const e = $('#txt-err'); e.hidden = !m; $('#txt-out').setAttribute('aria-invalid', !!m); if (m) e.querySelector('span').textContent = m; }
+$('#txt-in').addEventListener('input', txtMeta); $('#txt-out').addEventListener('input', () => { txtMeta(); txtErr(''); });
+$('#txt-enc').addEventListener('click', () => { const t = $('#txt-in').value; if (!t) { status($('#txt-status'), 'Digite um texto para codificar.', 'err'); $('#txt-in').focus(); return; } $('#txt-out').value = enc(t); txtErr(''); txtMeta(); status($('#txt-status'), 'Codificado.', 'ok'); });
+$('#txt-dec').addEventListener('click', () => { const o = $('#txt-out').value.trim(); if (!o) { txtErr('Cole um Base64 aqui para decodificar.'); $('#txt-out').focus(); return; } try { $('#txt-in').value = dec(o); txtErr(''); txtMeta(); status($('#txt-status'), 'Decodificado.', 'ok'); } catch { txtErr('Não é um Base64 de texto UTF-8 válido. Confira se o código foi colado inteiro.'); status($('#txt-status'), ''); } });
+$('#txt-copy').addEventListener('click', async () => { const o = $('#txt-out').value; if (!o) { status($('#txt-status'), 'Nada para copiar. Codifique um texto primeiro.', 'err'); return; } status($('#txt-status'), (await copy(o)) ? 'Copiado.' : 'Não foi possível copiar.', 'ok'); });
+$('#txt-clear').addEventListener('click', () => { $('#txt-in').value = $('#txt-out').value = ''; txtErr(''); txtMeta(); status($('#txt-status'), ''); });
+
+/* ---------- Histórico e favoritos ---------- */
+function rowHTML(h, kind) {
+  return `<li class="item"><img src="${h.preview}" alt=""><span><b>${esc(h.nome)}</b><small>${h.tipo.split('/')[1].toUpperCase()} · ${kb(h.bytes)} · ${ago(h.data)}</small></span>
+  <span class="actions"><button class="btn icon-only ghost" data-act="copy" data-id="${h.id}" data-kind="${kind}" aria-label="Copiar Base64 de ${esc(h.nome)}" title="Copiar Base64"><svg class="icon"><use href="#i-copy"/></svg></button>
+  <button class="btn icon-only ghost" data-act="del" data-id="${h.id}" data-kind="${kind}" aria-label="Remover ${esc(h.nome)}" title="Remover"><svg class="icon"><use href="#i-trash"/></svg></button></span></li>`;
+}
+function renderLists() {
+  const H = state.hist, F = state.fav;
+  $('#hist-list').innerHTML = H.length ? H.map((h) => rowHTML(h, 'hist')).join('') : `<li class="empty"><p>Nenhuma conversão ainda. Converta uma imagem e ela aparece aqui.</p><a class="btn primary" href="#imagem-base64">Converter imagem</a></li>`;
+  $('#fav-list').innerHTML = F.length ? F.map((h) => rowHTML(h, 'fav')).join('') : `<li class="empty"><p>Nenhum favorito. Depois de converter, use Favoritar para guardar o código aqui.</p><a class="btn primary" href="#imagem-base64">Converter imagem</a></li>`;
+  $('#hist-count').textContent = H.length ? `${H.length} de ${HIST_MAX} itens · ao passar de ${HIST_MAX}, os mais antigos saem` : '';
+  $('#fav-count').textContent = F.length ? `${F.length} ${F.length === 1 ? 'item' : 'itens'}` : '';
+  $('#hist-clear').hidden = !H.length; $('#fav-clear').hidden = !F.length; counts();
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const list = b.dataset.kind === 'hist' ? 'hist' : 'fav'; const item = state[list].find((x) => x.id === b.dataset.id); if (!item) return;
+  if (b.dataset.act === 'copy') { const ok = await copy(item.base64); toast(ok ? 'Base64 copiado.' : 'Não foi possível copiar.', ok ? 'ok' : 'err'); }
+  else { state[list] = state[list].filter((x) => x !== item); renderLists(); toast(`${item.nome} removido.`); }
+});
+$('#hist-clear').addEventListener('click', async () => { if (await ask('Limpar o histórico?', `As ${state.hist.length} conversões serão apagadas deste navegador. Favoritos não são afetados.`, 'Limpar histórico')) { state.hist = []; renderLists(); toast('Histórico limpo.'); } });
+$('#fav-clear').addEventListener('click', async () => { if (await ask('Limpar os favoritos?', `Os ${state.fav.length} favoritos serão apagados deste navegador.`, 'Limpar favoritos')) { state.fav = []; renderLists(); toast('Favoritos limpos.'); } });
+
+/* ---------- Início ---------- */
+rulerEmpty($('#img-ruler'), 'Escolha uma imagem para comparar o tamanho do arquivo com o do código.');
+rulerEmpty($('#cmp-ruler'), 'Escolha uma imagem para ver o tamanho antes e depois, com a marca de 200 KB.');
+txtMeta(); renderLists(); route();
+}
+</script>
+</body>
+</html>
